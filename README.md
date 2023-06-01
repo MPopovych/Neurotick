@@ -19,7 +19,8 @@ People are welcome to contribute.
 - Reasearch back propagation algorithms in the current architecture
 - Implement PSO algorithm together in the GA module
 - Possibly implement SGD or Ada-related optimiser + PPO
-
+<br><br>
+- Restructure the library
 <br><br>
 
 ## Contribution
