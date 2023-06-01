@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "playground",
+    "neurotick"
+]
+
+[profile.test]
+opt-level = 3
