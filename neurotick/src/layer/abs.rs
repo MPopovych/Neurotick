@@ -18,7 +18,9 @@ pub struct LBRef {
 }
 impl LBRef {
     pub fn pin<T: Layer + Sized + 'static>(layer: T) -> LBRef {
-        return LBRef { reference: Rc::new(layer) }
+        return LBRef {
+            reference: Rc::new(layer),
+        };
     }
 
     pub fn get_shape(&self) -> (Shape, Shape) {
@@ -69,7 +71,9 @@ pub trait Layer: TypedLayer {
  */
 pub trait LayerBase {
     fn init(&mut self);
-    fn create_from_ser(json: String, model_reader: ModelReader) -> Self where Self: Sized;
+    fn create_from_ser(json: String, model_reader: ModelReader) -> Self
+    where
+        Self: Sized;
     fn to_json(&self) -> String;
 }
 
@@ -90,4 +94,14 @@ pub enum GraphPropagationNode {
     DeadEnd(Box<dyn LayerSingleInput>),
     SingleInput(String, Box<dyn LayerSingleInput>),
     MultipleInput(Vec<String>, Box<dyn LayerMultiInput>),
+}
+
+impl GraphPropagationNode {
+    pub fn to_json(&self) -> String {
+        return match self {
+            GraphPropagationNode::DeadEnd(r) => r.to_json(),
+            GraphPropagationNode::SingleInput(_, r) => r.to_json(),
+            GraphPropagationNode::MultipleInput(_, r) => r.to_json(),
+        };
+    }
 }

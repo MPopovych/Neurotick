@@ -1,6 +1,7 @@
 use std::{fmt::Debug, rc::Rc};
 
 use indexmap::IndexMap;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     layer::abs::{GraphPropagationNode, LBRef, LayerPropagateEnum},
@@ -20,7 +21,7 @@ pub struct ModelBuilder {
 }
 
 /**
- * Exposed builder, models can be easily reverted to a builder via the reference
+ * Exposed builder
  */
 #[derive(Clone)]
 pub struct ModelBuilderRc {
@@ -82,13 +83,18 @@ impl ModelBuilderRc {
             })
             .collect::<IndexMap<_, _>>();
 
+        let builder_ref: IndexMap<String, BuilderNode> = self.r.graph.iter().map(|n| {
+            (n.1.name(), n.1.clone())
+        }).collect();
+
         return Model {
-            model_builder: self.clone(),
             input_layer_to_data_name: inputs,
             output_layer_to_data_name: outputs,
             sequential_prop: serialized,
+            builder_ref: builder_ref,
         };
     }
+
 }
 
 impl ModelBuilder {
@@ -147,7 +153,10 @@ impl ModelBuilder {
         match &current_layer.borrow_ref().get_node() {
             LBNode::DeadEnd => {
                 let name = format!("{}_{}", current_layer.type_name(), graph.len());
-                let builder_node = DeadEndStruct { name: name.clone() };
+                let builder_node = DeadEndStruct {
+                    name: name.clone(),
+                    type_name: current_layer.type_name(),
+                };
                 graph.insert(current_layer.clone(), BuilderNode::DeadEnd(builder_node));
                 return name;
             }
@@ -156,6 +165,7 @@ impl ModelBuilder {
                 let name = format!("{}_{}", current_layer.type_name(), graph.len());
                 let builder_node = SingleParentStruct {
                     name: name.clone(),
+                    type_name: current_layer.type_name(),
                     parent_name,
                 };
                 graph.insert(
@@ -172,6 +182,7 @@ impl ModelBuilder {
                 let name = format!("{}_{}", current_layer.type_name(), graph.len());
                 let builder_node = MultipleParentStruct {
                     name: name.clone(),
+                    type_name: current_layer.type_name(),
                     parent_names,
                 };
                 graph.insert(
@@ -183,12 +194,10 @@ impl ModelBuilder {
         }
     }
 
-    pub fn build(&self) -> Model {
-        todo!()
-    }
 }
 
-enum BuilderNode {
+#[derive(Clone, Serialize, Deserialize)]
+pub enum BuilderNode {
     DeadEnd(DeadEndStruct),
     SingleParent(SingleParentStruct),
     MultipleParent(MultipleParentStruct),
@@ -220,17 +229,23 @@ impl Debug for BuilderNode {
     }
 }
 
-struct DeadEndStruct {
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DeadEndStruct {
     name: String,
+    type_name: String,
 }
 
-struct SingleParentStruct {
+#[derive(Clone, Serialize, Deserialize)]
+pub struct SingleParentStruct {
     name: String,
+    type_name: String,
     parent_name: String,
 }
 
-struct MultipleParentStruct {
+#[derive(Clone, Serialize, Deserialize)]
+pub struct MultipleParentStruct {
     name: String,
+    type_name: String,
     parent_names: Vec<String>,
 }
 

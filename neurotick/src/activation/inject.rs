@@ -54,7 +54,7 @@ impl ActivationInjector {
 
 #[cfg(test)]
 pub mod test {
-    use crate::activation::relu::ReLu;
+    use crate::activation::{relu::ReLu, abs::ActivationSerialised};
 
     use super::ActivationInjector;
 
@@ -71,7 +71,6 @@ pub mod test {
         let serialised = injector.serialize(&ReLu {
             cap: test_cap_value,
         });
-        dbg!(&serialised);
         let deserialised = injector.deserialize(&serialised);
         dbg!(&deserialised);
 
@@ -80,5 +79,10 @@ pub mod test {
             deserialised.as_ref().as_any().is::<ReLu>() &&
             deserialised.as_ref().as_any().downcast_ref::<ReLu>().unwrap().cap.eq(&test_cap_value)
         }
+
+        let json = serde_json::to_string(&serialised).unwrap();
+        dbg!(&json);
+        let reverse_json: ActivationSerialised = serde_json::from_str(&json).unwrap();
+        dbg!(&reverse_json);
     }
 }

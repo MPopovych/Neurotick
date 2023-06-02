@@ -3,14 +3,17 @@ use std::collections::HashMap;
 use indexmap::IndexMap;
 
 use crate::{
-    builder::builder::ModelBuilderRc, layer::abs::GraphPropagationNode, matrix::nmatrix::NDMatrix,
+    builder::builder::BuilderNode,
+    layer::abs::GraphPropagationNode,
+    matrix::nmatrix::NDMatrix,
+    serial::model_serial::{ModelGraph, ModelIO, ModelMeta, ModelSerialized},
 };
 
 pub struct Model {
-    pub model_builder: ModelBuilderRc,
     pub input_layer_to_data_name: IndexMap<String, String>,
     pub output_layer_to_data_name: IndexMap<String, String>,
     pub sequential_prop: IndexMap<String, GraphPropagationNode>,
+    pub builder_ref: IndexMap<String, BuilderNode>,
 }
 
 impl Model {
@@ -56,5 +59,37 @@ impl Model {
             )
             .collect();
         return output;
+    }
+
+    pub fn to_serialized_model(&self) -> ModelSerialized {
+        let io = ModelIO {
+            inputs: self.input_layer_to_data_name.clone(),
+            outputs: self.output_layer_to_data_name.clone(),
+        };
+
+        let graph = ModelGraph {
+            graph: self.builder_ref.clone(),
+        };
+
+        let meta_map: IndexMap<String, String> = self
+            .sequential_prop
+            .iter()
+            .map(|node| (node.0.clone(), node.1.to_json()))
+            .collect();
+        let meta = ModelMeta {
+            meta: meta_map,
+        };
+        return ModelSerialized {
+            io: io,
+            graph: graph,
+            meta: meta,
+        };
+    }
+
+    pub fn to_json(&self) -> String {
+        return self.to_serialized_model().to_json();
+    }
+    pub fn to_json_pretty(&self) -> String {
+        return self.to_serialized_model().to_json_pretty();
     }
 }
