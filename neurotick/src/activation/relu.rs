@@ -8,12 +8,18 @@ use super::abs::{
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ReLu {
-    pub mock: u32,
+    pub cap: f32,
+}
+
+impl Default for ReLu {
+    fn default() -> Self {
+        Self { cap: 10.0 }
+    }
 }
 
 impl ForwardActivation for ReLu {
     fn apply(&self, array: &NDMatrix) -> NDMatrix {
-        let data = array.values.map(|f| f.max(0.0));
+        let data = array.values.map(|f| f.max(0.0).min(self.cap));
         return NDMatrix::with(array.width, array.height, data);
     }
 }

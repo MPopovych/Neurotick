@@ -11,6 +11,12 @@ pub struct LeakyReLu {
     pub beta: f32,
 }
 
+impl Default for LeakyReLu {
+    fn default() -> Self {
+        Self { beta: 0.03 }
+    }
+}
+
 impl ForwardActivation for LeakyReLu {
     fn apply(&self, array: &NDMatrix) -> NDMatrix {
         let data = array.values.map(|f| (f * self.beta).min(0.).max(*f));

@@ -22,8 +22,8 @@ impl ActivationInjector {
     pub fn default_injector() -> ActivationInjector {
         let mut injector: ActivationInjector = ActivationInjector::empty();
 
-        injector.inject(ReLu { mock: 0 });
-        injector.inject(LeakyReLu { beta: 0.03 });
+        injector.inject(ReLu::default());
+        injector.inject(LeakyReLu::default());
         return injector;
     }
 
@@ -61,7 +61,7 @@ pub mod test {
     fn test_default_injector() {
         let injector: ActivationInjector = ActivationInjector::default_injector();
 
-        let b1 = Box::new(ReLu { mock: 1 }) as Box<dyn Activation>;
+        let b1 = Box::new(ReLu::default()) as Box<dyn Activation>;
 
         let serialised = injector.serialize(&b1);
         dbg!(&serialised);
