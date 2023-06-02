@@ -1,21 +1,13 @@
-use std::any::Any;
+use std::{fmt::Debug};
 
 use crate::matrix::nmatrix::NDMatrix;
 
-pub trait Activation: ForwardActivation + NamedActivation + Parser + Writer + AToAny { }
-
-pub trait AToAny: 'static {
-    fn as_any(&self) -> &dyn Any;
-}
-
-impl<T: 'static> AToAny for T {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-
-pub trait ForwardActivation {
+pub trait Activation: NamedActivation + Debug { 
     fn apply(&self, array: &NDMatrix) -> NDMatrix;
+    fn as_json(&self) -> String;
+}
+pub trait ActivationHandler: NamedActivation { 
+    fn read(&self, json: &String) -> Box<dyn Activation>;
 }
 
 pub trait NamedActivation {
@@ -26,12 +18,4 @@ pub trait NamedActivation {
 pub struct ActivationSerialised {
     pub name: String, 
     pub json: String
-}
-
-pub trait Parser {
-    fn read_json(&self, json: &String) -> Box<dyn Activation> ;
-}
-
-pub trait Writer {
-    fn write_json(&self, act: &Box<dyn Activation>) -> ActivationSerialised;
 }
