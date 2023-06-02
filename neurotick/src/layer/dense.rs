@@ -1,13 +1,14 @@
-use std::rc::Rc;
+use serde::{Deserialize, Serialize};
 
-use crate::matrix::{
-    meta::{node::LBNode, shape::Shape},
-    nmatrix::NDMatrix,
+use crate::{
+    activation::{abs::{Activation, ActivationSerialised}, relu::ReLu},
+    matrix::{
+        meta::{node::LBNode, shape::Shape},
+        nmatrix::NDMatrix,
+    }, serial::model_reader::ModelReader,
 };
 
-use super::abs::{
-    LBRef, Layer, LayerPropagateBase, LayerPropagateEnum, LayerSingleInput, TypedLayer,
-};
+use super::abs::{LBRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput, TypedLayer};
 
 #[derive(Clone)]
 pub struct Dense {
@@ -16,6 +17,8 @@ pub struct Dense {
 }
 
 impl Dense {
+    pub const NAME: &str = "Dense";
+
     pub fn new<'a, F>(features: usize, uplink: F) -> LBRef
     where
         F: Fn() -> &'a LBRef,
@@ -24,14 +27,13 @@ impl Dense {
             features,
             parent: uplink().clone(),
         };
-        let rc = Rc::new(dense);
-        return LBRef { reference: rc };
+        return LBRef::pin(dense);
     }
 }
 
 impl TypedLayer for Dense {
     fn type_name(&self) -> String {
-        return "Dense".to_string();
+        return Self::NAME.to_string();
     }
 }
 
@@ -50,32 +52,73 @@ impl Layer for Dense {
     fn create_instance(&self, id: String) -> LayerPropagateEnum {
         let parent_feats = self.parent.get_shape().0.unwrap_to_conts();
         if parent_feats <= 0 {
-            panic!("Zero or negative features in parent is not allowed, by: {}", id);
+            panic!(
+                "Zero or negative features in parent is not allowed, by: {}",
+                id
+            );
         }
         let instance = DenseImpl {
-            _id: id,
-            _dense: self.clone(),
+            id: id,
+            features: self.features,
             weight: NDMatrix::constant(self.features, parent_feats, 1.0 / parent_feats as f32),
             bias: NDMatrix::constant(self.features, 1, 0.0),
+            activation: Box::new(ReLu::default()),
         };
         LayerPropagateEnum::SingleInput(Box::new(instance))
     }
 }
 
 pub struct DenseImpl {
-    _id: String,
-    _dense: Dense,
+    id: String,
+    features: usize,
     weight: NDMatrix,
     bias: NDMatrix,
+    activation: Box<dyn Activation>,
 }
 
-impl LayerPropagateBase for DenseImpl {
-    fn init(&self) {}
+impl LayerBase for DenseImpl {
+    fn init(&mut self) {}
+
+    fn create_from_ser(json: String, model_reader: ModelReader) -> Self {
+        let deserialized: DenseSerialization = serde_json::from_str(&json).unwrap();
+        return DenseImpl {
+            id: deserialized.id,
+            features: deserialized.features,
+            weight: deserialized.weight,
+            bias: deserialized.bias,
+            activation: model_reader.get_activation_di().deserialize(&deserialized.activation)
+        };
+    }
+
+    fn to_json(&self) -> String {
+        serde_json::to_string(&DenseSerialization {
+            id: self.id.clone(),
+            features: self.features.clone(),
+            weight: self.weight.clone(),
+            bias: self.bias.clone(),
+            activation: self.activation.as_serialized()
+        })
+        .unwrap()
+    }
 }
 
 impl LayerSingleInput for DenseImpl {
     fn propagate(&self, input: &NDMatrix) -> NDMatrix {
         let weighted = &(input * &self.weight);
-        return weighted + &self.bias;
+        let with_bias = weighted + &self.bias;
+        return self.activation.apply(&with_bias);
     }
+}
+
+/**
+ * Serialization
+ */
+
+#[derive(Serialize, Deserialize, Debug)]
+struct DenseSerialization {
+    id: String,
+    features: usize,
+    weight: NDMatrix,
+    bias: NDMatrix,
+    activation: ActivationSerialised
 }

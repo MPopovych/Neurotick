@@ -1,14 +1,19 @@
 use std::collections::HashMap;
 
 use super::{
-    abs::{ActivationSerialised, Activation, ActivationHandler},
-    relu::{ReLuHandler}, lerelu::LeReLuHandler,
+    abs::{Activation, ActivationHandler, ActivationSerialised},
+    lerelu::LeReLuHandler,
+    relu::ReLuHandler,
 };
 
-pub struct InjectionWrap(Box<dyn ActivationHandler>);
-
+/**
+ *  This a helper for introducing custom activation functions.
+ *  By registering and properly implementing handlers the ModelReader will restore the structures as traits.
+ *  Parsing may and should crash when encountering an unknown activation object.
+ *  Deserializing return a boxed trait, which than can be applied to a layer.
+ */
 pub struct ActivationInjector {
-    map: HashMap<String, InjectionWrap>,
+    map: HashMap<String, Box<dyn ActivationHandler>>,
 }
 
 impl ActivationInjector {
@@ -18,6 +23,9 @@ impl ActivationInjector {
         };
     }
 
+    /**
+     * Returns the injector pre-filled with library supported activation functions
+     */
     pub fn default_injector() -> ActivationInjector {
         let mut injector: ActivationInjector = ActivationInjector::empty();
 
@@ -27,26 +35,17 @@ impl ActivationInjector {
     }
 
     pub fn register(&mut self, parser: impl ActivationHandler + 'static) {
-        self.map.insert(
-            parser.name(),
-            InjectionWrap {
-                0: Box::new(parser),
-            },
-        );
+        self.map.insert(parser.name(), Box::new(parser));
     }
 
     pub fn serialize(&self, activation: &impl Activation) -> ActivationSerialised {
-        return ActivationSerialised {
-            name: activation.name(),
-            json: activation.as_json(),
-        };
+        return activation.as_serialized();
     }
 
     pub fn deserialize(&self, ser: &ActivationSerialised) -> Box<dyn Activation> {
         match self.map.get(&ser.name) {
             Some(parser) => {
-                let act = parser.0.read(&ser.json);
-                return act;
+                return parser.read(&ser.json);
             }
             None => panic!("Activation {:?} not supported", ser.name),
         }
@@ -55,17 +54,31 @@ impl ActivationInjector {
 
 #[cfg(test)]
 pub mod test {
-    use crate::activation::{relu::ReLu};
+    use crate::activation::relu::ReLu;
 
     use super::ActivationInjector;
 
     #[test]
     fn test_default_injector() {
+        let test_cap_value = 3333.0;
+
+        assert! {
+            !ReLu::default().cap.eq(&test_cap_value)
+        }
+
         let injector: ActivationInjector = ActivationInjector::default_injector();
 
-        let serialised = injector.serialize(&ReLu::default());
+        let serialised = injector.serialize(&ReLu {
+            cap: test_cap_value,
+        });
         dbg!(&serialised);
         let deserialised = injector.deserialize(&serialised);
         dbg!(&deserialised);
+
+        assert! {
+            serialised.name == ReLu::NAME &&
+            deserialised.as_ref().as_any().is::<ReLu>() &&
+            deserialised.as_ref().as_any().downcast_ref::<ReLu>().unwrap().cap.eq(&test_cap_value)
+        }
     }
 }

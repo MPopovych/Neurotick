@@ -4,11 +4,13 @@ use crate::matrix::nmatrix::NDMatrix;
 
 use super::abs::{Activation, ActivationHandler, NamedActivation};
 
-const RELU_NAME: &str = "ReLu";
-
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ReLu {
     pub cap: f32,
+}
+
+impl ReLu {
+    pub const NAME: &str = "ReLu";
 }
 
 impl Default for ReLu {
@@ -30,7 +32,7 @@ impl Activation for ReLu {
 
 impl NamedActivation for ReLu {
     fn name(&self) -> String {
-        return RELU_NAME.to_owned();
+        return Self::NAME.to_owned();
     }
 }
 
@@ -38,7 +40,7 @@ pub struct ReLuHandler;
 
 impl NamedActivation for ReLuHandler {
     fn name(&self) -> String {
-        return RELU_NAME.to_owned();
+        return ReLu::NAME.to_owned();
     }
 }
 

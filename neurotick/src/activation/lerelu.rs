@@ -4,8 +4,6 @@ use crate::matrix::nmatrix::NDMatrix;
 
 use super::abs::{Activation, ActivationHandler, NamedActivation};
 
-const LERELU_NAME: &str = "LeakyReLu";
-
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct LeakyReLu {
     pub beta: f32,
@@ -15,6 +13,10 @@ impl Default for LeakyReLu {
     fn default() -> Self {
         Self { beta: 0.03 }
     }
+}
+
+impl LeakyReLu {
+    pub const NAME: &str = "LeakyReLu";
 }
 
 impl Activation for LeakyReLu {
@@ -30,7 +32,7 @@ impl Activation for LeakyReLu {
 
 impl NamedActivation for LeakyReLu {
     fn name(&self) -> String {
-        return LERELU_NAME.to_owned();
+        return Self::NAME.to_owned();
     }
 }
 
@@ -38,7 +40,7 @@ pub struct LeReLuHandler;
 
 impl NamedActivation for LeReLuHandler {
     fn name(&self) -> String {
-        return LERELU_NAME.to_owned();
+        return LeakyReLu::NAME.to_owned();
     }
 }
 

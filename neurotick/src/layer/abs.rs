@@ -6,12 +6,21 @@ use crate::matrix::{
     meta::{node::LBNode, shape::Shape},
     nmatrix::NDMatrix,
 };
+use crate::serial::model_reader::ModelReader;
 
+/**
+ * Struct for building out a graph of layers. Pre-instancing
+ * Serialization is done on layer instances
+ */
 #[derive(Clone)]
 pub struct LBRef {
-    pub reference: Rc<dyn Layer>,
+    reference: Rc<dyn Layer>,
 }
 impl LBRef {
+    pub fn pin<T: Layer + Sized + 'static>(layer: T) -> LBRef {
+        return LBRef { reference: Rc::new(layer) }
+    }
+
     pub fn get_shape(&self) -> (Shape, Shape) {
         return self.reference.get_shape();
     }
@@ -19,8 +28,14 @@ impl LBRef {
     pub fn type_name(&self) -> String {
         return self.reference.as_ref().type_name();
     }
-}
 
+    pub fn borrow_ref(&self) -> &dyn Layer {
+        return self.reference.as_ref();
+    }
+}
+/**
+ * Helpers for navigating the graph on a pointer basis
+ */
 impl PartialEq for LBRef {
     fn eq(&self, other: &Self) -> bool {
         std::ptr::eq(self.reference.as_ref(), other.reference.as_ref())
@@ -34,6 +49,9 @@ impl Hash for LBRef {
     }
 }
 
+/**
+ * Represents the identity type of the layer, should be unique other-wise lead to a panic
+ */
 pub trait TypedLayer {
     fn type_name(&self) -> String;
 }
@@ -49,15 +67,17 @@ pub trait Layer: TypedLayer {
 /**
  * Init
  */
-pub trait LayerPropagateBase {
-    fn init(&self);
+pub trait LayerBase {
+    fn init(&mut self);
+    fn create_from_ser(json: String, model_reader: ModelReader) -> Self where Self: Sized;
+    fn to_json(&self) -> String;
 }
 
-pub trait LayerSingleInput: LayerPropagateBase {
+pub trait LayerSingleInput: LayerBase {
     fn propagate(&self, input: &NDMatrix) -> NDMatrix;
 }
 
-pub trait LayerMultiInput: LayerPropagateBase {
+pub trait LayerMultiInput: LayerBase {
     fn propagate_multi(&self, inputs: &Vec<&NDMatrix>) -> NDMatrix;
 }
 

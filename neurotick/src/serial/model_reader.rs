@@ -1,7 +1,11 @@
 use crate::activation::inject::ActivationInjector;
 
-#[allow(dead_code)]
-
-struct ModelReader {
+pub struct ModelReader {
     activation_injector: ActivationInjector,
+}
+
+impl ModelReader {
+    pub fn get_activation_di(&self) -> &ActivationInjector {
+        return &self.activation_injector
+    }
 }

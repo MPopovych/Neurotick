@@ -1,4 +1,6 @@
-#[derive(Clone, Debug)]
+use serde::{Serialize, Deserialize};
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Shape {
     /** Specified size, ex.: of features or timeseries size */
     Const(usize),

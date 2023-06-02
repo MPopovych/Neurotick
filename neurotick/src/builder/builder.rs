@@ -59,7 +59,7 @@ impl ModelBuilderRc {
                     outputs.insert(name.clone(), key_value.1.clone());
                 }
 
-                let instance = entry.0.reference.create_instance(name.clone());
+                let instance = entry.0.borrow_ref().create_instance(name.clone());
                 let graph_node = match entry.1 {
                     BuilderNode::DeadEnd(_) => match instance {
                         LayerPropagateEnum::SingleInput(b) => GraphPropagationNode::DeadEnd(b),
@@ -117,7 +117,7 @@ impl ModelBuilder {
         outputs: IndexMap<LBRef, String>,
     ) -> ModelBuilderRc {
         inputs.iter().for_each(|input_entry| {
-            if let LBNode::DeadEnd = input_entry.0.reference.get_node() {
+            if let LBNode::DeadEnd = input_entry.0.borrow_ref().get_node() {
             } else {
                 panic!("Bad input node, should be a DeadEnd node impl")
             }
@@ -144,7 +144,7 @@ impl ModelBuilder {
         if let Some(existing) = graph.get(current_layer) {
             return existing.name();
         }
-        match &current_layer.reference.get_node() {
+        match &current_layer.borrow_ref().get_node() {
             LBNode::DeadEnd => {
                 let name = format!("{}_{}", current_layer.type_name(), graph.len());
                 let builder_node = DeadEndStruct { name: name.clone() };

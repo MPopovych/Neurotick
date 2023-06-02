@@ -1,12 +1,12 @@
-use std::rc::Rc;
+use serde::{Serialize, Deserialize};
 
-use crate::matrix::{
+use crate::{matrix::{
     meta::{node::LBNode, shape::Shape},
     nmatrix::NDMatrix,
-};
+}, serial::model_reader::ModelReader};
 
 use super::abs::{
-    LBRef, Layer, LayerPropagateBase, LayerPropagateEnum, LayerSingleInput, TypedLayer,
+    LBRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput, TypedLayer,
 };
 
 #[derive(Clone)]
@@ -16,16 +16,17 @@ pub struct Input {
 }
 
 impl Input {
+    pub const NAME: &str = "Input";
+
     pub fn new(features: Shape, size: Shape) -> LBRef {
         let input = Input { features, size };
-        let rc = Rc::new(input);
-        return LBRef { reference: rc };
+        return LBRef::pin(input);
     }
 }
 
 impl TypedLayer for Input {
     fn type_name(&self) -> String {
-        return "Input".to_string();
+        return Self::NAME.to_string();
     }
 }
 
@@ -40,24 +41,54 @@ impl Layer for Input {
 
     fn create_instance(&self, name: String) -> LayerPropagateEnum {
         let instance = InputImpl {
-            _id: name,
-            _input: self.clone(),
+            id: name,
+            features: self.features.clone(),
+            size: self.size.clone(),
         };
         LayerPropagateEnum::SingleInput(Box::new(instance))
     }
 }
 
 pub struct InputImpl {
-    _id: String,
-    _input: Input,
+    id: String,
+    features: Shape,
+    size: Shape,
 }
 
-impl LayerPropagateBase for InputImpl {
-    fn init(&self) {}
+impl LayerBase for InputImpl {
+    fn init(&mut self) {}
+
+    fn create_from_ser(json: String, _model_reader: ModelReader) -> Self where Self: Sized {
+        let deserialized: InputSerialization = serde_json::from_str(&json).unwrap();
+        return InputImpl {
+            id: deserialized.id,
+            features: deserialized.features,
+            size: deserialized.size
+        }
+    }
+
+    fn to_json(&self) -> String {
+        serde_json::to_string(&InputSerialization {
+            id: self.id.clone(),
+            features: self.features.clone(),
+            size: self.size.clone(),
+        }).unwrap()
+    }
 }
 
 impl LayerSingleInput for InputImpl {
     fn propagate(&self, input: &NDMatrix) -> NDMatrix {
         return input.clone();
     }
+}
+
+/**
+ * Serialization
+ */
+
+#[derive(Serialize, Deserialize, Debug)]
+struct InputSerialization {
+    id: String,
+    features: Shape,
+    size: Shape,
 }

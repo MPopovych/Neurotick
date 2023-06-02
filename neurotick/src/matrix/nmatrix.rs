@@ -2,8 +2,9 @@ use std::fmt::Debug;
 use std::ops::{Add, BitAnd, Mul};
 
 use ndarray::Array2;
+use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::serial::matrix_serial::{MatrixSerial, MatrixPack};
+use crate::serial::matrix_serial::{MatrixPack, MatrixSerial};
 
 pub mod test;
 
@@ -15,7 +16,6 @@ pub struct NDMatrix {
 }
 
 impl NDMatrix {
-
     pub fn from_raw_vec(width: usize, height: usize, raw_vec: Vec<f32>) -> NDMatrix {
         let data = Array2::from_shape_vec((height, width), raw_vec).unwrap();
         return NDMatrix {
@@ -28,7 +28,10 @@ impl NDMatrix {
     pub fn with(width: usize, height: usize, with: Array2<f32>) -> NDMatrix {
         let shape = with.shape();
         if shape[0] != height || shape[1] != width {
-            panic!("Wrong array sizes as input {}:{} with {}:{}", width, height, shape[0], shape[1])
+            panic!(
+                "Wrong array sizes as input {}:{} with {}:{}",
+                width, height, shape[0], shape[1]
+            )
         }
         return NDMatrix {
             width,
@@ -161,17 +164,45 @@ impl MatrixSerial<NDMatrix> for NDMatrix {
         MatrixPack {
             width: self.width,
             height: self.height,
-            data: self.values.clone().iter().map(|f| f.to_be_bytes()).flatten().collect()
+            data: self
+                .values
+                .clone()
+                .iter()
+                .map(|f| f.to_be_bytes())
+                .flatten()
+                .collect(),
         }
     }
 
     /**
-     * This should panic if the byte packing is wrong 
+     * This should panic if the byte packing is wrong
      */
     fn unpack(pack: &MatrixPack) -> NDMatrix {
-        let float_array = pack.data.chunks_exact(4).into_iter().map(|be| {
-            f32::from_be_bytes(be.try_into().unwrap())
-        }).collect();
+        let float_array = pack
+            .data
+            .chunks_exact(4)
+            .into_iter()
+            .map(|be| f32::from_be_bytes(be.try_into().unwrap()))
+            .collect();
         NDMatrix::from_raw_vec(pack.width, pack.height, float_array)
+    }
+}
+
+impl Serialize for NDMatrix {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.pack().serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for NDMatrix {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let pack: MatrixPack = MatrixPack::deserialize(deserializer)?;
+        return Ok(NDMatrix::unpack(&pack));
     }
 }
