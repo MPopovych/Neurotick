@@ -4,8 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct MatrixPack {
     pub width: usize,
     pub height: usize,
-    #[serde(with = "serde_bytes")]
-    pub data: Vec<u8>,
+    pub data: String,
 }
 
 pub trait MatrixSerial<T: Sized> {

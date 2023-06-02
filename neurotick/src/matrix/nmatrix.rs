@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use std::ops::{Add, BitAnd, Mul};
 
+use base64::Engine;
 use ndarray::Array2;
 use serde::{Deserialize, Deserializer, Serialize};
 
@@ -161,16 +162,18 @@ impl Debug for NDMatrix {
 
 impl MatrixSerial<NDMatrix> for NDMatrix {
     fn pack(&self) -> MatrixPack {
+        let bytes: Vec<u8> = self
+            .values
+            .clone()
+            .iter()
+            .map(|f| f.to_be_bytes())
+            .flatten()
+            .collect();
+        let encoded = base64::engine::general_purpose::STANDARD_NO_PAD.encode(bytes);
         MatrixPack {
             width: self.width,
             height: self.height,
-            data: self
-                .values
-                .clone()
-                .iter()
-                .map(|f| f.to_be_bytes())
-                .flatten()
-                .collect(),
+            data: encoded,
         }
     }
 
@@ -178,8 +181,8 @@ impl MatrixSerial<NDMatrix> for NDMatrix {
      * This should panic if the byte packing is wrong
      */
     fn unpack(pack: &MatrixPack) -> NDMatrix {
-        let float_array = pack
-            .data
+        let decoded = base64::engine::general_purpose::STANDARD_NO_PAD.decode(&pack.data).unwrap();
+        let float_array = decoded
             .chunks_exact(4)
             .into_iter()
             .map(|be| f32::from_be_bytes(be.try_into().unwrap()))

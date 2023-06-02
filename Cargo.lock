@@ -614,6 +614,7 @@ dependencies = [
 name = "neurotick"
 version = "0.1.0"
 dependencies = [
+ "base64 0.21.2",
  "blas-src",
  "indexmap",
  "linked-hash-map",
