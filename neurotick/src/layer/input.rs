@@ -58,7 +58,7 @@ pub struct InputImpl {
 impl LayerBase for InputImpl {
     fn init(&mut self) {}
 
-    fn create_from_ser(json: String, _model_reader: ModelReader) -> Self where Self: Sized {
+    fn create_from_ser(json: &String, _model_reader: &ModelReader) -> Self where Self: Sized {
         let deserialized: InputSerialization = serde_json::from_str(&json).unwrap();
         return InputImpl {
             id: deserialized.id,

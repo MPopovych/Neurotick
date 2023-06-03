@@ -71,7 +71,7 @@ pub trait Layer: TypedLayer {
  */
 pub trait LayerBase {
     fn init(&mut self);
-    fn create_from_ser(json: String, model_reader: ModelReader) -> Self
+    fn create_from_ser(json: &String, model_reader: &ModelReader) -> Self
     where
         Self: Sized;
     fn to_json(&self) -> String;

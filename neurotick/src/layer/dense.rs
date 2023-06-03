@@ -79,7 +79,7 @@ pub struct DenseImpl {
 impl LayerBase for DenseImpl {
     fn init(&mut self) {}
 
-    fn create_from_ser(json: String, model_reader: ModelReader) -> Self {
+    fn create_from_ser(json: &String, model_reader: &ModelReader) -> Self {
         let deserialized: DenseSerialization = serde_json::from_str(&json).unwrap();
         return DenseImpl {
             id: deserialized.id,

@@ -29,8 +29,7 @@ pub mod raw_string {
     where
         D: Deserializer<'de>,
     {
-        let map = Map::deserialize(deserializer).unwrap();
-
+        let map: Value = Deserialize::deserialize(deserializer)?;
         Ok(serde_json::to_string(&map).unwrap())
     }
 }
@@ -48,7 +47,7 @@ pub mod raw_value_map {
         for entry in data {
             mapper.serialize_key(entry.0)?;
 
-            match serde_json::from_str::<Map<String, Value>>(&entry.1) {
+            match serde_json::from_str::<Value>(&entry.1) {
                 Ok(r) => mapper.serialize_value(&r)?,
                 Err(_) => mapper.serialize_value(&entry.1)?,
             }
