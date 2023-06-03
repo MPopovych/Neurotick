@@ -3,7 +3,7 @@ use std::hash::Hasher;
 use std::rc::Rc;
 
 use crate::matrix::{
-    meta::{node::LBNode, shape::Shape},
+    meta::{node::LayerType, shape::Shape},
     nmatrix::NDMatrix,
 };
 use crate::serial::model_reader::ModelReader;
@@ -14,12 +14,12 @@ use crate::utils::json_wrap::JsonWrap;
  * Serialization is done on layer instances
  */
 #[derive(Clone)]
-pub struct LBRef {
+pub struct LayerRef {
     reference: Rc<dyn Layer>,
 }
-impl LBRef {
-    pub fn pin<T: Layer + Sized + 'static>(layer: T) -> LBRef {
-        return LBRef {
+impl LayerRef {
+    pub fn pin<T: Layer + Sized + 'static>(layer: T) -> LayerRef {
+        return LayerRef {
             reference: Rc::new(layer),
         };
     }
@@ -39,14 +39,14 @@ impl LBRef {
 /**
  * Helpers for navigating the graph on a pointer basis
  */
-impl PartialEq for LBRef {
+impl PartialEq for LayerRef {
     fn eq(&self, other: &Self) -> bool {
         std::ptr::eq(self.reference.as_ref(), other.reference.as_ref())
     }
 }
-impl Eq for LBRef {}
+impl Eq for LayerRef {}
 
-impl Hash for LBRef {
+impl Hash for LayerRef {
     fn hash<H: Hasher>(&self, state: &mut H) {
         std::ptr::hash(self.reference.as_ref(), state)
     }
@@ -61,7 +61,7 @@ pub trait TypedLayer {
 
 pub trait Layer: TypedLayer {
     fn get_shape(&self) -> (Shape, Shape);
-    fn get_node(&self) -> LBNode;
+    fn get_node(&self) -> LayerType;
     fn create_instance(&self, name: String) -> LayerPropagateEnum;
 }
 
@@ -72,10 +72,11 @@ pub trait Layer: TypedLayer {
  */
 pub trait LayerBase {
     fn init(&mut self);
+    fn to_json(&self) -> JsonWrap;
+
     fn create_from_ser(json: &JsonWrap, model_reader: &ModelReader) -> LayerPropagateEnum
     where
         Self: Sized;
-    fn to_json(&self) -> JsonWrap;
 }
 
 pub trait LayerSingleInput: LayerBase {
@@ -91,18 +92,18 @@ pub enum LayerPropagateEnum {
     MultipleInput(Box<dyn LayerMultiInput>),
 }
 
-pub enum GraphPropagationNode {
+pub enum ModelPropagationNode {
     DeadEnd(Box<dyn LayerSingleInput>),
     SingleInput(String, Box<dyn LayerSingleInput>),
     MultipleInput(Vec<String>, Box<dyn LayerMultiInput>),
 }
 
-impl GraphPropagationNode {
+impl ModelPropagationNode {
     pub fn to_json(&self) -> JsonWrap {
         return match self {
-            GraphPropagationNode::DeadEnd(r) => r.to_json(),
-            GraphPropagationNode::SingleInput(_, r) => r.to_json(),
-            GraphPropagationNode::MultipleInput(_, r) => r.to_json(),
+            ModelPropagationNode::DeadEnd(r) => r.to_json(),
+            ModelPropagationNode::SingleInput(_, r) => r.to_json(),
+            ModelPropagationNode::MultipleInput(_, r) => r.to_json(),
         };
     }
 }

@@ -3,31 +3,31 @@ use serde::{Deserialize, Serialize};
 use crate::{
     activation::{abs::{Activation, ActivationSerialised}, relu::ReLu},
     matrix::{
-        meta::{node::LBNode, shape::Shape},
+        meta::{node::LayerType, shape::Shape},
         nmatrix::NDMatrix,
     }, serial::model_reader::ModelReader, utils::json_wrap::JsonWrap,
 };
 
-use super::abs::{LBRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput, TypedLayer};
+use super::abs::{LayerRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput, TypedLayer};
 
 #[derive(Clone)]
 pub struct Dense {
     features: usize,
-    parent: LBRef,
+    parent: LayerRef,
 }
 
 impl Dense {
     pub const NAME: &str = "Dense";
 
-    pub fn new<'a, F>(features: usize, uplink: F) -> LBRef
+    pub fn new<'a, F>(features: usize, uplink: F) -> LayerRef
     where
-        F: Fn() -> &'a LBRef,
+        F: Fn() -> &'a LayerRef,
     {
         let dense = Dense {
             features,
             parent: uplink().clone(),
         };
-        return LBRef::pin(dense);
+        return LayerRef::pin(dense);
     }
 }
 
@@ -45,8 +45,8 @@ impl Layer for Dense {
         );
     }
 
-    fn get_node(&self) -> LBNode {
-        return LBNode::SingleParent(self.parent.clone());
+    fn get_node(&self) -> LayerType {
+        return LayerType::SingleParent(self.parent.clone());
     }
 
     fn create_instance(&self, id: String) -> LayerPropagateEnum {

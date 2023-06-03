@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{matrix::nmatrix::NDMatrix, utils::json_wrap::JsonWrap};
 
-use super::abs::{Activation, NamedActivation, ActivationSerialised, ActivationVirtual};
+use super::abs::{Activation, ActivationSerialised, ActivationVirtual};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct LeakyReLu {
@@ -34,18 +34,12 @@ impl Activation for LeakyReLu {
     
 }
 
-impl NamedActivation for LeakyReLu {
-    fn name(&self) -> &'static str {
-        return Self::NAME;
-    }
-}
-
 impl ActivationVirtual for LeakyReLu {
     fn from_json(json: &JsonWrap) -> Box<dyn Activation> {
         Box::new(json.to::<LeakyReLu>().unwrap())
     }
 
-    fn name() -> &'static str {
+    fn type_name() -> &'static str {
         return Self::NAME
     }
 }

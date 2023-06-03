@@ -1,12 +1,12 @@
 use serde::{Serialize, Deserialize};
 
 use crate::{matrix::{
-    meta::{node::LBNode, shape::Shape},
+    meta::{node::LayerType, shape::Shape},
     nmatrix::NDMatrix,
 }, serial::model_reader::ModelReader, utils::json_wrap::JsonWrap};
 
 use super::abs::{
-    LBRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput, TypedLayer,
+    LayerRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput, TypedLayer,
 };
 
 #[derive(Clone)]
@@ -18,9 +18,9 @@ pub struct Input {
 impl Input {
     pub const NAME: &str = "Input";
 
-    pub fn new(features: Shape, size: Shape) -> LBRef {
+    pub fn new(features: Shape, size: Shape) -> LayerRef {
         let input = Input { features, size };
-        return LBRef::pin(input);
+        return LayerRef::pin(input);
     }
 }
 
@@ -35,8 +35,8 @@ impl Layer for Input {
         return (self.features.clone(), self.size.clone());
     }
 
-    fn get_node(&self) -> LBNode {
-        return LBNode::DeadEnd;
+    fn get_node(&self) -> LayerType {
+        return LayerType::DeadEnd;
     }
 
     fn create_instance(&self, name: String) -> LayerPropagateEnum {

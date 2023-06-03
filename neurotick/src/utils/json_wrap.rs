@@ -20,4 +20,8 @@ impl JsonWrap {
     {
         return serde_json::from_value(self.value.clone());
     }
+
+    pub fn to_string(&self) -> Result<String, Error> {
+        return serde_json::to_string(&self.value)
+    }
 }

@@ -2,8 +2,8 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    builder::builder::BuilderNode,
-    layer::abs::{GraphPropagationNode, LayerPropagateEnum},
+    builder::graph_elements::BuilderNode,
+    layer::abs::{ModelPropagationNode, LayerPropagateEnum},
     model::model::Model,
     utils::json_wrap::JsonWrap,
 };
@@ -44,7 +44,7 @@ impl ModelSerialized {
     }
 
     pub fn build_model(&self, reader: &ModelReader) -> Model {
-        let node_meta_graph: IndexMap<String, GraphPropagationNode> = self
+        let node_meta_graph: IndexMap<String, ModelPropagationNode> = self
             .meta
             .meta
             .iter()
@@ -57,14 +57,14 @@ impl ModelSerialized {
                 let prop_enum: LayerPropagateEnum =
                     *reader.get_layer_di().create(&type_name, meta.1, reader);
 
-                let node_num: GraphPropagationNode = match parent_type_descriptor {
+                let node_num: ModelPropagationNode = match parent_type_descriptor {
                     BuilderNode::DeadEnd(_) => {
                         let cast = if let LayerPropagateEnum::SingleInput(single) = prop_enum {
                             single
                         } else {
                             panic!("Not a dead end builder node")
                         };
-                        GraphPropagationNode::DeadEnd(cast)
+                        ModelPropagationNode::DeadEnd(cast)
                     }
                     BuilderNode::SingleParent(c) => {
                         let cast = if let LayerPropagateEnum::SingleInput(single) = prop_enum {
@@ -72,7 +72,7 @@ impl ModelSerialized {
                         } else {
                             panic!("Not a single input builder node")
                         };
-                        GraphPropagationNode::SingleInput(c.parent_name.clone(), cast)
+                        ModelPropagationNode::SingleInput(c.parent_name.clone(), cast)
                     }
                     BuilderNode::MultipleParent(c) => {
                         let cast = if let LayerPropagateEnum::MultipleInput(single) = prop_enum {
@@ -80,8 +80,8 @@ impl ModelSerialized {
                         } else {
                             panic!("Not a multi input builder node")
                         };
-                        GraphPropagationNode::MultipleInput(c.parent_names.clone(), cast)
-                    },
+                        ModelPropagationNode::MultipleInput(c.parent_names.clone(), cast)
+                    }
                 };
 
                 return (layer_name, node_num);

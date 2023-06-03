@@ -6,6 +6,7 @@ People are welcome to contribute.
 ## Features
 - Matrix operations are done via NDArray's and BLAS
 - Dense and Input layer added
+- Custom implementations of layers and activations functions
 <br><br>
 
 ## Plans
@@ -20,7 +21,9 @@ People are welcome to contribute.
 - Implement PSO algorithm together in the GA module
 - Possibly implement SGD or Ada-related optimiser + PPO
 <br><br>
-- Restructure the library
+- Restructure the library, enable features, experimental addons
+- Simplify core trait objects and internal model data
+- More unit tests
 <br><br>
 
 ## Contribution

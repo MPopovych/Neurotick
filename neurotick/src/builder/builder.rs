@@ -1,80 +1,59 @@
-use std::{fmt::Debug, rc::Rc};
+use std::fmt::Debug;
 
 use indexmap::IndexMap;
-use serde::{Deserialize, Serialize};
 
 use crate::{
-    layer::abs::{GraphPropagationNode, LBRef, LayerPropagateEnum},
+    layer::abs::{ModelPropagationNode, LayerRef, LayerPropagateEnum},
     map,
-    matrix::meta::node::LBNode,
+    matrix::meta::node::LayerType,
     model::model::Model,
 };
 
+use super::graph_elements::{BuilderNode, DeadEndStruct, MultipleParentStruct, SingleParentStruct};
+
 /**
- * Internal structure, encapsulated
  * Builds the neural model with default values
  */
 pub struct ModelBuilder {
-    inputs: IndexMap<LBRef, String>,
-    outputs: IndexMap<LBRef, String>,
-    graph: IndexMap<LBRef, BuilderNode>,
+    inputs: IndexMap<LayerRef, String>,
+    outputs: IndexMap<LayerRef, String>,
+    graph: IndexMap<LayerRef, BuilderNode>,
 }
 
-/**
- * Exposed builder
- */
-#[derive(Clone)]
-pub struct ModelBuilderRc {
-    r: Rc<ModelBuilder>,
-}
-
-impl Into<ModelBuilderRc> for ModelBuilder {
-    fn into(self) -> ModelBuilderRc {
-        ModelBuilderRc::wrap(self)
-    }
-}
-
-impl ModelBuilderRc {
-    pub fn wrap(builder: ModelBuilder) -> ModelBuilderRc {
-        return ModelBuilderRc {
-            r: Rc::new(builder),
-        };
-    }
-
+impl ModelBuilder {
     pub fn build(&self) -> Model {
         let mut inputs: IndexMap<String, String> = IndexMap::new();
         let mut outputs: IndexMap<String, String> = IndexMap::new();
 
-        let serialized: IndexMap<String, GraphPropagationNode> = self
-            .r
+        let serialized: IndexMap<String, ModelPropagationNode> = self
             .graph
             .iter()
             .map(|entry| {
                 let name = entry.1.layer_name();
 
-                if let Some(key_value) = self.r.inputs.get_key_value(entry.0) {
+                if let Some(key_value) = self.inputs.get_key_value(entry.0) {
                     inputs.insert(name.clone(), key_value.1.clone());
                 }
 
-                if let Some(key_value) = self.r.outputs.get_key_value(entry.0) {
+                if let Some(key_value) = self.outputs.get_key_value(entry.0) {
                     outputs.insert(name.clone(), key_value.1.clone());
                 }
 
                 let instance = entry.0.borrow_ref().create_instance(name.clone());
                 let graph_node = match entry.1 {
                     BuilderNode::DeadEnd(_) => match instance {
-                        LayerPropagateEnum::SingleInput(b) => GraphPropagationNode::DeadEnd(b),
+                        LayerPropagateEnum::SingleInput(b) => ModelPropagationNode::DeadEnd(b),
                         _ => panic!("{} is not a dead end graph node", name),
                     },
                     BuilderNode::SingleParent(s) => match instance {
                         LayerPropagateEnum::SingleInput(b) => {
-                            GraphPropagationNode::SingleInput(s.parent_name.clone(), b)
+                            ModelPropagationNode::SingleInput(s.parent_name.clone(), b)
                         }
                         _ => panic!("{} is not a dead end graph node", name),
                     },
                     BuilderNode::MultipleParent(s) => match instance {
                         LayerPropagateEnum::MultipleInput(b) => {
-                            GraphPropagationNode::MultipleInput(s.parent_names.clone(), b)
+                            ModelPropagationNode::MultipleInput(s.parent_names.clone(), b)
                         }
                         _ => panic!("{} is not a dead end graph node", name),
                     },
@@ -83,9 +62,11 @@ impl ModelBuilderRc {
             })
             .collect::<IndexMap<_, _>>();
 
-        let builder_ref: IndexMap<String, BuilderNode> = self.r.graph.iter().map(|n| {
-            (n.1.layer_name(), n.1.clone())
-        }).collect();
+        let builder_ref: IndexMap<String, BuilderNode> = self
+            .graph
+            .iter()
+            .map(|n| (n.1.layer_name(), n.1.clone()))
+            .collect();
 
         return Model {
             input_layer_to_data_name: inputs,
@@ -94,7 +75,6 @@ impl ModelBuilderRc {
             builder_ref: builder_ref,
         };
     }
-
 }
 
 impl ModelBuilder {
@@ -103,32 +83,29 @@ impl ModelBuilder {
      */
     const SINGLE_IO: &str = "DEF_IO";
 
-    pub fn from_straight(input: LBRef, output: LBRef) -> ModelBuilderRc {
+    pub fn from_straight(input: LayerRef, output: LayerRef) -> ModelBuilder {
         return Self::from(
             map!(input => Self::SINGLE_IO.to_owned()),
             map!(output => Self::SINGLE_IO.to_owned()),
         );
     }
 
-    pub fn from_single_o(inputs: IndexMap<LBRef, String>, output: LBRef) -> ModelBuilderRc {
+    pub fn from_single_o(inputs: IndexMap<LayerRef, String>, output: LayerRef) -> ModelBuilder {
         return Self::from(inputs, map!(output => Self::SINGLE_IO.to_owned()));
     }
 
-    pub fn from_single_i(input: LBRef, outputs: IndexMap<LBRef, String>) -> ModelBuilderRc {
+    pub fn from_single_i(input: LayerRef, outputs: IndexMap<LayerRef, String>) -> ModelBuilder {
         return Self::from(map!(input => Self::SINGLE_IO.to_owned()), outputs);
     }
 
-    pub fn from(
-        inputs: IndexMap<LBRef, String>,
-        outputs: IndexMap<LBRef, String>,
-    ) -> ModelBuilderRc {
+    pub fn from(inputs: IndexMap<LayerRef, String>, outputs: IndexMap<LayerRef, String>) -> ModelBuilder {
         inputs.iter().for_each(|input_entry| {
-            if let LBNode::DeadEnd = input_entry.0.borrow_ref().get_node() {
+            if let LayerType::DeadEnd = input_entry.0.borrow_ref().get_node() {
             } else {
                 panic!("Bad input node, should be a DeadEnd node impl")
             }
         });
-        let mut graph: IndexMap<LBRef, BuilderNode> = IndexMap::new();
+        let mut graph: IndexMap<LayerRef, BuilderNode> = IndexMap::new();
 
         outputs.iter().for_each(|entry| {
             Self::iterate_nodes(&mut graph, entry.0, 0);
@@ -143,15 +120,15 @@ impl ModelBuilder {
     }
 
     fn iterate_nodes(
-        graph: &mut IndexMap<LBRef, BuilderNode>,
-        current_layer: &LBRef,
+        graph: &mut IndexMap<LayerRef, BuilderNode>,
+        current_layer: &LayerRef,
         depth: usize,
     ) -> String {
         if let Some(existing) = graph.get(current_layer) {
             return existing.layer_name();
         }
         match &current_layer.borrow_ref().get_node() {
-            LBNode::DeadEnd => {
+            LayerType::DeadEnd => {
                 let name = format!("{}_{}", current_layer.type_name(), graph.len());
                 let builder_node = DeadEndStruct {
                     layer_name: name.clone(),
@@ -160,7 +137,7 @@ impl ModelBuilder {
                 graph.insert(current_layer.clone(), BuilderNode::DeadEnd(builder_node));
                 return name;
             }
-            LBNode::SingleParent(parent) => {
+            LayerType::SingleParent(parent) => {
                 let parent_name = Self::iterate_nodes(graph, parent, depth + 1);
                 let name = format!("{}_{}", current_layer.type_name(), graph.len());
                 let builder_node = SingleParentStruct {
@@ -174,7 +151,7 @@ impl ModelBuilder {
                 );
                 return name;
             }
-            LBNode::MultipleParent(parents) => {
+            LayerType::MultipleParent(parents) => {
                 let parent_names: Vec<String> = parents
                     .iter()
                     .map(|p| Self::iterate_nodes(graph, p, depth + 1))
@@ -193,68 +170,6 @@ impl ModelBuilder {
             }
         }
     }
-
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub enum BuilderNode {
-    DeadEnd(DeadEndStruct),
-    SingleParent(SingleParentStruct),
-    MultipleParent(MultipleParentStruct),
-}
-
-impl BuilderNode {
-    pub fn layer_name(&self) -> String {
-        match self {
-            BuilderNode::DeadEnd(s) => s.layer_name.clone(),
-            BuilderNode::SingleParent(s) => s.layer_name.clone(),
-            BuilderNode::MultipleParent(s) => s.layer_name.clone(),
-        }
-    }
-
-    pub fn type_name(&self) -> String {
-        match self {
-            BuilderNode::DeadEnd(s) => s.type_name.clone(),
-            BuilderNode::SingleParent(s) => s.type_name.clone(),
-            BuilderNode::MultipleParent(s) => s.type_name.clone(),
-        }
-    }
-}
-
-impl Debug for BuilderNode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::DeadEnd(arg0) => f.debug_struct(&arg0.layer_name).finish(),
-            Self::SingleParent(arg0) => f
-                .debug_struct(&arg0.layer_name)
-                .field("parent", &arg0.parent_name)
-                .finish(),
-            Self::MultipleParent(arg0) => f
-                .debug_struct(&arg0.layer_name)
-                .field("parents", &arg0.parent_names)
-                .finish(),
-        }
-    }
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct DeadEndStruct {
-    layer_name: String,
-    type_name: String,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct SingleParentStruct {
-    layer_name: String,
-    type_name: String,
-    pub parent_name: String,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct MultipleParentStruct {
-    layer_name: String,
-    type_name: String,
-    pub parent_names: Vec<String>,
 }
 
 impl Debug for ModelBuilder {
@@ -278,11 +193,5 @@ impl Debug for ModelBuilder {
             )
             .field("graph", &self.graph.iter().map(|e| e.1).collect::<Vec<_>>())
             .finish()
-    }
-}
-
-impl Debug for ModelBuilderRc {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.r.fmt(f)
     }
 }

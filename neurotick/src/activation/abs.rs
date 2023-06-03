@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{matrix::nmatrix::NDMatrix, utils::{json_wrap::JsonWrap, as_any::AsAny}};
 
-pub trait Activation: NamedActivation + Debug + AsAny {
+pub trait Activation: Debug + AsAny {
     fn apply(&self, array: &NDMatrix) -> NDMatrix;
     fn as_serialized(&self) -> ActivationSerialised;
 }
@@ -19,13 +19,9 @@ pub trait ActivationSerialize {
     fn as_serialized(&self) -> ActivationSerialised;
 }
 
-pub trait NamedActivation {
-    fn name(&self) -> &'static str;
-}
-
 pub trait ActivationVirtual {
     fn from_json(json: &JsonWrap) -> Box<dyn Activation>;
-    fn name() -> &'static str;
+    fn type_name() -> &'static str;
 }
 
 

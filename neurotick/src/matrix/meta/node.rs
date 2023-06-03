@@ -1,10 +1,10 @@
-use crate::layer::abs::LBRef;
+use crate::layer::abs::LayerRef;
 
 /**
  * Descriptor of graph structure. Represents and holds the references to parent nodes.
  */
-pub enum LBNode {
+pub enum LayerType {
     DeadEnd,
-    SingleParent(LBRef),
-    MultipleParent(Vec<LBRef>),
+    SingleParent(LayerRef),
+    MultipleParent(Vec<LayerRef>),
 }

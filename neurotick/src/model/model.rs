@@ -3,16 +3,15 @@ use std::collections::HashMap;
 use indexmap::IndexMap;
 
 use crate::{
-    builder::builder::BuilderNode,
-    layer::abs::GraphPropagationNode,
+    layer::abs::ModelPropagationNode,
     matrix::nmatrix::NDMatrix,
-    serial::model_serial::{ModelGraph, ModelIO, ModelMeta, ModelSerialized}, utils::json_wrap::JsonWrap,
+    serial::model_serial::{ModelGraph, ModelIO, ModelMeta, ModelSerialized}, utils::json_wrap::JsonWrap, builder::graph_elements::BuilderNode,
 };
 
 pub struct Model {
     pub input_layer_to_data_name: IndexMap<String, String>,
     pub output_layer_to_data_name: IndexMap<String, String>,
-    pub sequential_prop: IndexMap<String, GraphPropagationNode>,
+    pub sequential_prop: IndexMap<String, ModelPropagationNode>,
     pub builder_ref: IndexMap<String, BuilderNode>,
 }
 
@@ -21,7 +20,7 @@ impl Model {
         let mut data_buffer: HashMap<String, NDMatrix> = HashMap::new();
 
         self.sequential_prop.iter().for_each(|seq| match seq.1 {
-            GraphPropagationNode::DeadEnd(callable) => {
+            ModelPropagationNode::DeadEnd(callable) => {
                 let data_name = self.input_layer_to_data_name.get(seq.0);
                 let data = match data_name {
                     Some(name) => inputs.get(name).unwrap(),
@@ -30,12 +29,12 @@ impl Model {
                 let result = callable.propagate(data);
                 data_buffer.insert(seq.0.clone(), result);
             }
-            GraphPropagationNode::SingleInput(parent, callable) => {
+            ModelPropagationNode::SingleInput(parent, callable) => {
                 let data = data_buffer.get(parent).unwrap();
                 let result = callable.propagate(data);
                 data_buffer.insert(seq.0.clone(), result);
             }
-            GraphPropagationNode::MultipleInput(parents, callable) => {
+            ModelPropagationNode::MultipleInput(parents, callable) => {
                 let data: Vec<&NDMatrix> = parents
                     .iter()
                     .map(|p| &data_buffer.get(p).unwrap() as &NDMatrix)
