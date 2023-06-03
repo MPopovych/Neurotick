@@ -7,6 +7,7 @@ use crate::matrix::{
     nmatrix::NDMatrix,
 };
 use crate::serial::model_reader::ModelReader;
+use crate::utils::json_wrap::JsonWrap;
 
 /**
  * Struct for building out a graph of layers. Pre-instancing
@@ -27,7 +28,7 @@ impl LBRef {
         return self.reference.get_shape();
     }
 
-    pub fn type_name(&self) -> String {
+    pub fn type_name(&self) -> &'static str {
         return self.reference.as_ref().type_name();
     }
 
@@ -55,7 +56,7 @@ impl Hash for LBRef {
  * Represents the identity type of the layer, should be unique other-wise lead to a panic
  */
 pub trait TypedLayer {
-    fn type_name(&self) -> String;
+    fn type_name(&self) -> &'static str;
 }
 
 pub trait Layer: TypedLayer {
@@ -71,10 +72,10 @@ pub trait Layer: TypedLayer {
  */
 pub trait LayerBase {
     fn init(&mut self);
-    fn create_from_ser(json: &String, model_reader: &ModelReader) -> Self
+    fn create_from_ser(json: &JsonWrap, model_reader: &ModelReader) -> LayerPropagateEnum
     where
         Self: Sized;
-    fn to_json(&self) -> String;
+    fn to_json(&self) -> JsonWrap;
 }
 
 pub trait LayerSingleInput: LayerBase {
@@ -97,7 +98,7 @@ pub enum GraphPropagationNode {
 }
 
 impl GraphPropagationNode {
-    pub fn to_json(&self) -> String {
+    pub fn to_json(&self) -> JsonWrap {
         return match self {
             GraphPropagationNode::DeadEnd(r) => r.to_json(),
             GraphPropagationNode::SingleInput(_, r) => r.to_json(),

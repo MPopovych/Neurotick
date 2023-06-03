@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-pub struct GenericInjector<T: ?Sized, C> {
-    map: HashMap<String, Box<dyn Fn(&String, &C) -> Box<T>>>,
+pub struct GenericInjector<T: ?Sized, J, C> {
+    map: HashMap<String, Box<dyn Fn(&J, &C) -> Box<T>>>,
 }
 
-impl<T: ?Sized, C> GenericInjector<T, C> {
-    pub fn new() -> GenericInjector<T, C> {
+impl<T: ?Sized, J, C> GenericInjector<T, J, C> {
+    pub fn new() -> GenericInjector<T, J, C> {
         return GenericInjector {
             map: HashMap::new(),
         };
@@ -13,12 +13,12 @@ impl<T: ?Sized, C> GenericInjector<T, C> {
 
     pub fn register<F: 'static>(&mut self, name: &str, call: F)
     where
-        F: Fn(&String, &C) -> Box<T>,
+        F: Fn(&J, &C) -> Box<T>,
     {
         self.map.insert(name.to_string(), Box::new(call));
     }
 
-    pub fn create(&self, name: &str, json: &String, context: &C) -> Box<T> {
+    pub fn create(&self, name: &str, json: &J, context: &C) -> Box<T> {
         let call = self.map.get(name).unwrap();
         return call(&json, context);
     }
@@ -26,33 +26,26 @@ impl<T: ?Sized, C> GenericInjector<T, C> {
 
 #[cfg(test)]
 pub mod test {
-    use crate::activation::{
-        abs::{Activation, ActivationHandler, ActivationSerialised, ActivationSerialize},
-        lerelu::{LeReLuHandler, LeakyReLu},
-        relu::{ReLu, ReLuHandler},
+    use crate::{
+        activation::{
+            abs::{Activation, ActivationSerialised},
+            relu::ReLu,
+        },
+        serial::model_reader::{ModelReader},
     };
-
-    use super::GenericInjector;
 
     #[test]
     pub fn inject_activation() {
+        let model_reader = ModelReader::default();
+
         let test_cap_value = 3333.0;
 
-        let mut injector: GenericInjector<dyn Activation, String> = GenericInjector::new();
-        injector.register(ReLu::NAME, |json, _| {
-            let handler = ReLuHandler {};
-            return handler.read(json);
-        });
-        injector.register(LeakyReLu::NAME, |json, _| {
-            let handler = LeReLuHandler {};
-            return handler.read(json);
-        });
-
+        let injector = model_reader.get_activation_di();
         let sample = ReLu {
             cap: test_cap_value,
         };
-        let json = sample.as_json();
-        let deserialised = injector.create(ReLu::NAME, &json, &"".to_string());
+        let serialized = sample.as_serialized();
+        let deserialised = injector.create(ReLu::NAME, &serialized.json, &model_reader);
         dbg!(&deserialised);
 
         assert! {

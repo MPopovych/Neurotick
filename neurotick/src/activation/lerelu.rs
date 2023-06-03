@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::matrix::nmatrix::NDMatrix;
+use crate::{matrix::nmatrix::NDMatrix, utils::json_wrap::JsonWrap};
 
-use super::abs::{Activation, ActivationHandler, NamedActivation};
+use super::abs::{Activation, NamedActivation, ActivationSerialised, ActivationVirtual};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct LeakyReLu {
@@ -25,27 +25,27 @@ impl Activation for LeakyReLu {
         return NDMatrix::with(array.width, array.height, data);
     }
 
-    fn as_json(&self) -> String {
-        serde_json::to_string(&self).unwrap()
+    fn as_serialized(&self) -> ActivationSerialised {
+        ActivationSerialised {
+            name: Self::NAME.to_string(),
+            json: JsonWrap::from(&self).unwrap()
+        }
     }
+    
 }
 
 impl NamedActivation for LeakyReLu {
-    fn name(&self) -> String {
-        return Self::NAME.to_owned();
+    fn name(&self) -> &'static str {
+        return Self::NAME;
     }
 }
 
-pub struct LeReLuHandler;
-
-impl NamedActivation for LeReLuHandler {
-    fn name(&self) -> String {
-        return LeakyReLu::NAME.to_owned();
+impl ActivationVirtual for LeakyReLu {
+    fn from_json(json: &JsonWrap) -> Box<dyn Activation> {
+        Box::new(json.to::<LeakyReLu>().unwrap())
     }
-}
 
-impl ActivationHandler for LeReLuHandler {
-    fn read(&self, json: &String) -> Box<dyn Activation> {
-        return Box::new(serde_json::from_str::<LeakyReLu>(&json).unwrap());
+    fn name() -> &'static str {
+        return Self::NAME
     }
 }

@@ -6,7 +6,7 @@ use crate::{
     builder::builder::BuilderNode,
     layer::abs::GraphPropagationNode,
     matrix::nmatrix::NDMatrix,
-    serial::model_serial::{ModelGraph, ModelIO, ModelMeta, ModelSerialized},
+    serial::model_serial::{ModelGraph, ModelIO, ModelMeta, ModelSerialized}, utils::json_wrap::JsonWrap,
 };
 
 pub struct Model {
@@ -71,7 +71,7 @@ impl Model {
             graph: self.builder_ref.clone(),
         };
 
-        let meta_map: IndexMap<String, String> = self
+        let meta_map: IndexMap<String, JsonWrap> = self
             .sequential_prop
             .iter()
             .map(|node| (node.0.clone(), node.1.to_json()))

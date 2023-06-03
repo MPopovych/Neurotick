@@ -9,7 +9,7 @@ People are welcome to contribute.
 <br><br>
 
 ## Plans
-- Add serialisation ✅ and deserialisation
+- Add serialisation ✅ and deserialisation ✅
 - Add activation functions ✅
 - Add weight inits and randomisers
 - Add several common layer implementations

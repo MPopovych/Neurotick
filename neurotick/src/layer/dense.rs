@@ -5,7 +5,7 @@ use crate::{
     matrix::{
         meta::{node::LBNode, shape::Shape},
         nmatrix::NDMatrix,
-    }, serial::model_reader::ModelReader,
+    }, serial::model_reader::ModelReader, utils::json_wrap::JsonWrap,
 };
 
 use super::abs::{LBRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput, TypedLayer};
@@ -32,8 +32,8 @@ impl Dense {
 }
 
 impl TypedLayer for Dense {
-    fn type_name(&self) -> String {
-        return Self::NAME.to_string();
+    fn type_name(&self) -> &'static str {
+        return Self::NAME;
     }
 }
 
@@ -79,26 +79,31 @@ pub struct DenseImpl {
 impl LayerBase for DenseImpl {
     fn init(&mut self) {}
 
-    fn create_from_ser(json: &String, model_reader: &ModelReader) -> Self {
-        let deserialized: DenseSerialization = serde_json::from_str(&json).unwrap();
-        return DenseImpl {
+    fn create_from_ser(json: &JsonWrap, model_reader: &ModelReader) -> LayerPropagateEnum {
+        let deserialized: DenseSerialization = json.to().unwrap();
+        let activation_ser = &deserialized.activation;
+        let impl_ref = DenseImpl {
             id: deserialized.id,
             features: deserialized.features,
             weight: deserialized.weight,
             bias: deserialized.bias,
-            activation: model_reader.get_activation_di().deserialize(&deserialized.activation)
+            activation: model_reader.get_activation_di().create(&activation_ser.name, &activation_ser.json, model_reader)
         };
+
+        return LayerPropagateEnum::SingleInput(
+            Box::new(impl_ref)
+        )
     }
 
-    fn to_json(&self) -> String {
-        serde_json::to_string(&DenseSerialization {
+    fn to_json(&self) -> JsonWrap {
+        let serial = DenseSerialization {
             id: self.id.clone(),
             features: self.features.clone(),
             weight: self.weight.clone(),
             bias: self.bias.clone(),
             activation: self.activation.as_serialized()
-        })
-        .unwrap()
+        };
+        return JsonWrap::from(serial).unwrap()
     }
 }
 

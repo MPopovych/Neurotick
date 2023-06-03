@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 use crate::{matrix::{
     meta::{node::LBNode, shape::Shape},
     nmatrix::NDMatrix,
-}, serial::model_reader::ModelReader};
+}, serial::model_reader::ModelReader, utils::json_wrap::JsonWrap};
 
 use super::abs::{
     LBRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput, TypedLayer,
@@ -25,8 +25,8 @@ impl Input {
 }
 
 impl TypedLayer for Input {
-    fn type_name(&self) -> String {
-        return Self::NAME.to_string();
+    fn type_name(&self) -> &'static str {
+        return Self::NAME;
     }
 }
 
@@ -58,21 +58,25 @@ pub struct InputImpl {
 impl LayerBase for InputImpl {
     fn init(&mut self) {}
 
-    fn create_from_ser(json: &String, _model_reader: &ModelReader) -> Self where Self: Sized {
-        let deserialized: InputSerialization = serde_json::from_str(&json).unwrap();
-        return InputImpl {
+    fn create_from_ser(json: &JsonWrap, _model_reader: &ModelReader) -> LayerPropagateEnum {
+        let deserialized: InputSerialization = json.to().unwrap();
+        let impl_ref = InputImpl {
             id: deserialized.id,
             features: deserialized.features,
             size: deserialized.size
-        }
+        };
+        return LayerPropagateEnum::SingleInput(
+            Box::new(impl_ref)
+        );
     }
 
-    fn to_json(&self) -> String {
-        serde_json::to_string(&InputSerialization {
+    fn to_json(&self) -> JsonWrap {
+        let serial = InputSerialization {
             id: self.id.clone(),
             features: self.features.clone(),
             size: self.size.clone(),
-        }).unwrap()
+        };
+        return JsonWrap::from(serial).unwrap()
     }
 }
 

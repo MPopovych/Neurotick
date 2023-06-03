@@ -50,7 +50,7 @@ impl ModelBuilderRc {
             .graph
             .iter()
             .map(|entry| {
-                let name = entry.1.name();
+                let name = entry.1.layer_name();
 
                 if let Some(key_value) = self.r.inputs.get_key_value(entry.0) {
                     inputs.insert(name.clone(), key_value.1.clone());
@@ -84,7 +84,7 @@ impl ModelBuilderRc {
             .collect::<IndexMap<_, _>>();
 
         let builder_ref: IndexMap<String, BuilderNode> = self.r.graph.iter().map(|n| {
-            (n.1.name(), n.1.clone())
+            (n.1.layer_name(), n.1.clone())
         }).collect();
 
         return Model {
@@ -148,14 +148,14 @@ impl ModelBuilder {
         depth: usize,
     ) -> String {
         if let Some(existing) = graph.get(current_layer) {
-            return existing.name();
+            return existing.layer_name();
         }
         match &current_layer.borrow_ref().get_node() {
             LBNode::DeadEnd => {
                 let name = format!("{}_{}", current_layer.type_name(), graph.len());
                 let builder_node = DeadEndStruct {
-                    name: name.clone(),
-                    type_name: current_layer.type_name(),
+                    layer_name: name.clone(),
+                    type_name: current_layer.type_name().to_string(),
                 };
                 graph.insert(current_layer.clone(), BuilderNode::DeadEnd(builder_node));
                 return name;
@@ -164,8 +164,8 @@ impl ModelBuilder {
                 let parent_name = Self::iterate_nodes(graph, parent, depth + 1);
                 let name = format!("{}_{}", current_layer.type_name(), graph.len());
                 let builder_node = SingleParentStruct {
-                    name: name.clone(),
-                    type_name: current_layer.type_name(),
+                    layer_name: name.clone(),
+                    type_name: current_layer.type_name().to_string(),
                     parent_name,
                 };
                 graph.insert(
@@ -181,8 +181,8 @@ impl ModelBuilder {
                     .collect();
                 let name = format!("{}_{}", current_layer.type_name(), graph.len());
                 let builder_node = MultipleParentStruct {
-                    name: name.clone(),
-                    type_name: current_layer.type_name(),
+                    layer_name: name.clone(),
+                    type_name: current_layer.type_name().to_string(),
                     parent_names,
                 };
                 graph.insert(
@@ -204,11 +204,19 @@ pub enum BuilderNode {
 }
 
 impl BuilderNode {
-    fn name(&self) -> String {
+    pub fn layer_name(&self) -> String {
         match self {
-            BuilderNode::DeadEnd(s) => s.name.clone(),
-            BuilderNode::SingleParent(s) => s.name.clone(),
-            BuilderNode::MultipleParent(s) => s.name.clone(),
+            BuilderNode::DeadEnd(s) => s.layer_name.clone(),
+            BuilderNode::SingleParent(s) => s.layer_name.clone(),
+            BuilderNode::MultipleParent(s) => s.layer_name.clone(),
+        }
+    }
+
+    pub fn type_name(&self) -> String {
+        match self {
+            BuilderNode::DeadEnd(s) => s.type_name.clone(),
+            BuilderNode::SingleParent(s) => s.type_name.clone(),
+            BuilderNode::MultipleParent(s) => s.type_name.clone(),
         }
     }
 }
@@ -216,13 +224,13 @@ impl BuilderNode {
 impl Debug for BuilderNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::DeadEnd(arg0) => f.debug_struct(&arg0.name).finish(),
+            Self::DeadEnd(arg0) => f.debug_struct(&arg0.layer_name).finish(),
             Self::SingleParent(arg0) => f
-                .debug_struct(&arg0.name)
+                .debug_struct(&arg0.layer_name)
                 .field("parent", &arg0.parent_name)
                 .finish(),
             Self::MultipleParent(arg0) => f
-                .debug_struct(&arg0.name)
+                .debug_struct(&arg0.layer_name)
                 .field("parents", &arg0.parent_names)
                 .finish(),
         }
@@ -231,22 +239,22 @@ impl Debug for BuilderNode {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct DeadEndStruct {
-    name: String,
+    layer_name: String,
     type_name: String,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SingleParentStruct {
-    name: String,
+    layer_name: String,
     type_name: String,
-    parent_name: String,
+    pub parent_name: String,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct MultipleParentStruct {
-    name: String,
+    layer_name: String,
     type_name: String,
-    parent_names: Vec<String>,
+    pub parent_names: Vec<String>,
 }
 
 impl Debug for ModelBuilder {
@@ -257,7 +265,7 @@ impl Debug for ModelBuilder {
                 &self
                     .inputs
                     .iter()
-                    .map(|i| (i.1, self.graph.get(i.0).unwrap().name()) as (&String, String))
+                    .map(|i| (i.1, self.graph.get(i.0).unwrap().layer_name()) as (&String, String))
                     .collect::<IndexMap<_, _>>(),
             )
             .field(
@@ -265,7 +273,7 @@ impl Debug for ModelBuilder {
                 &self
                     .outputs
                     .iter()
-                    .map(|i| (self.graph.get(i.0).unwrap().name(), i.1) as (String, &String))
+                    .map(|i| (self.graph.get(i.0).unwrap().layer_name(), i.1) as (String, &String))
                     .collect::<IndexMap<_, _>>(),
             )
             .field("graph", &self.graph.iter().map(|e| e.1).collect::<Vec<_>>())

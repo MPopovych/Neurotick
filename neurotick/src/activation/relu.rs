@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::matrix::nmatrix::NDMatrix;
+use crate::{matrix::nmatrix::NDMatrix, utils::json_wrap::JsonWrap};
 
-use super::abs::{Activation, ActivationHandler, NamedActivation};
+use super::abs::{Activation, NamedActivation, ActivationVirtual, ActivationSerialised};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ReLu {
@@ -24,28 +24,27 @@ impl Activation for ReLu {
         let data = array.values.map(|f| f.max(0.0).min(self.cap));
         return NDMatrix::with(array.width, array.height, data);
     }
-
-    fn as_json(&self) -> String {
-        serde_json::to_string(&self).unwrap()
+    fn as_serialized(&self) -> ActivationSerialised {
+        ActivationSerialised {
+            name: Self::NAME.to_string(),
+            json: JsonWrap::from(&self).unwrap()
+        }
     }
+
 }
 
 impl NamedActivation for ReLu {
-    fn name(&self) -> String {
-        return Self::NAME.to_owned();
+    fn name(&self) -> &'static str {
+        return Self::NAME;
     }
 }
 
-pub struct ReLuHandler;
-
-impl NamedActivation for ReLuHandler {
-    fn name(&self) -> String {
-        return ReLu::NAME.to_owned();
+impl ActivationVirtual for ReLu {
+    fn from_json(json: &JsonWrap) -> Box<dyn Activation> {
+        Box::new(json.to::<ReLu>().unwrap())
     }
-}
 
-impl ActivationHandler for ReLuHandler {
-    fn read(&self, json: &String) -> Box<dyn Activation> {
-        return Box::new(serde_json::from_str::<ReLu>(&json).unwrap());
+    fn name() -> &'static str {
+        return Self::NAME
     }
 }
