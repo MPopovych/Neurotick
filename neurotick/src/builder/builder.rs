@@ -15,8 +15,17 @@ use super::graph_elements::{BuilderNode, DeadEndStruct, MultipleParentStruct, Si
  * Builds the neural model with default values
  */
 pub struct ModelBuilder {
+    /**
+     * Maps the input layer reference into a named input
+     */
     inputs: IndexMap<LayerRef, String>,
+    /**
+     * Maps the output layer reference into a named ouput
+     */
     outputs: IndexMap<LayerRef, String>,
+    /**
+     * Holds the layer references into a processed builder node
+     */
     graph: IndexMap<LayerRef, BuilderNode>,
 }
 

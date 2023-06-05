@@ -1,4 +1,4 @@
-use crate::{utils::{injector::GenericInjector, json_wrap::JsonWrap}, activation::{abs::{Activation, ActivationVirtual}, relu::ReLu, lerelu::LeakyReLu}, layer::{abs::{LayerPropagateEnum, LayerBase}, input::{Input, InputImpl}, dense::{Dense, DenseImpl}}};
+use crate::{utils::{injector::GenericInjector, json_wrap::JsonWrap}, activation::{abs::{Activation, ActivationVirtual}, relu::ReLu, lerelu::LeakyReLu, softmax::SoftMax}, layer::{abs::{LayerPropagateEnum, LayerBase}, input::{Input, InputImpl}, dense::{Dense, DenseImpl}}};
 
 
 pub struct ModelReader {
@@ -33,6 +33,10 @@ impl GenericInjector<dyn Activation, JsonWrap, ModelReader> {
 
         injector.register(LeakyReLu::NAME, |json, _reader| {
             LeakyReLu::from_json(&json)
+        });
+
+        injector.register(SoftMax::NAME, |_, _reader| {
+            Box::new(SoftMax::default())
         });
         return injector;
     }

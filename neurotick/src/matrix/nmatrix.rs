@@ -2,7 +2,8 @@ use std::fmt::Debug;
 use std::ops::{Add, BitAnd, Mul};
 
 use base64::Engine;
-use ndarray::Array2;
+use ndarray::{Array2, Ix2, Axis, Ix1};
+use ndarray::iter::{Iter, AxisIter};
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::serial::matrix_serial::{MatrixPack, MatrixSerial};
@@ -94,6 +95,18 @@ impl NDMatrix {
     pub fn set(&mut self, y: usize, x: usize, value: f32) {
         self.check_args(y, x);
         *self.values.get_mut((y, x)).unwrap() = value;
+    }
+
+    pub fn iter_all(&self) -> Iter<'_, f32, Ix2> {
+        return self.values.iter();
+    }
+
+    pub fn iter_rows(&self) -> AxisIter<'_, f32, Ix1> {
+        return self.values.axis_iter(Axis(0));
+    }
+
+    pub fn iter_columns(&self) -> AxisIter<'_, f32, Ix1> {
+        return self.values.axis_iter(Axis(1));
     }
 
     fn check_args(&self, y: usize, x: usize) {
