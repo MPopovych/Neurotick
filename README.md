@@ -13,7 +13,7 @@ People are welcome to contribute.
 ## Plans
 - Add serialisation ✅ and deserialisation ✅
 - Add activation functions ✅
-- Add weight inits and randomisers
+- Add weight inits and randomisers ✅
 - Add several common layer implementations
 - Add several custom layer implementations (compatible with GA but lack backpropagation)
 <br><br>
