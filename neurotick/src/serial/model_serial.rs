@@ -2,8 +2,8 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    builder::graph_elements::BuilderNode,
-    layer::abs::{ModelPropagationNode, LayerPropagateEnum},
+    builder::graph_elements::{BuilderNode, ModelPropagationNode},
+    layer::abs::LayerPropagateEnum,
     model::model::Model,
     utils::json_wrap::JsonWrap,
 };

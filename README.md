@@ -6,7 +6,8 @@ People are welcome to contribute.
 ## Features
 - Matrix operations are done via NDArray's and BLAS
 - Dense and Input layer added
-- Custom implementations of layers and activations functions
+- ReLu, LeakyReLu, Softmax activation functions
+- Custom implementations of layers and activations functions, see CUSTOMIZATION.md
 <br><br>
 
 ## Plans

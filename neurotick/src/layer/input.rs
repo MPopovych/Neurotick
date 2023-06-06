@@ -6,7 +6,7 @@ use crate::{matrix::{
 }, serial::model_reader::ModelReader, utils::json_wrap::JsonWrap};
 
 use super::abs::{
-    LayerRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput, TypedLayer,
+    LayerRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput,
 };
 
 #[derive(Clone)]
@@ -24,13 +24,11 @@ impl Input {
     }
 }
 
-impl TypedLayer for Input {
+impl Layer for Input {
     fn type_name(&self) -> &'static str {
         return Self::NAME;
     }
-}
 
-impl Layer for Input {
     fn get_shape(&self) -> (Shape, Shape) {
         return (self.features.clone(), self.size.clone());
     }

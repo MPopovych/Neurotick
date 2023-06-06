@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Shape {
@@ -20,5 +20,13 @@ impl Shape {
             Shape::Repeat => panic!("No feature count"),
             Shape::Variable => panic!("No feature count"),
         };
+    }
+
+    pub fn is_const(&self) -> bool {
+        if let Shape::Const(_) = self {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

@@ -3,9 +3,10 @@ use std::collections::HashMap;
 use indexmap::IndexMap;
 
 use crate::{
-    layer::abs::ModelPropagationNode,
+    builder::{graph_elements::{BuilderNode, ModelPropagationNode}, builder::ModelBuilder},
     matrix::nmatrix::NDMatrix,
-    serial::model_serial::{ModelGraph, ModelIO, ModelMeta, ModelSerialized}, utils::json_wrap::JsonWrap, builder::graph_elements::BuilderNode,
+    serial::model_serial::{ModelGraph, ModelIO, ModelMeta, ModelSerialized},
+    utils::json_wrap::JsonWrap, map,
 };
 
 pub struct Model {
@@ -16,6 +17,22 @@ pub struct Model {
 }
 
 impl Model {
+
+    pub fn propagate_single(&self, input: NDMatrix) -> NDMatrix {
+        return self.propagate_single_input(input).remove(ModelBuilder::SINGLE_IO).unwrap()
+    }
+
+    pub fn propagate_single_input(&self, input: NDMatrix) -> HashMap<String, NDMatrix> {
+        let input_map: HashMap<String, NDMatrix> = map! {
+            ModelBuilder::SINGLE_IO.to_string() => input
+        };
+        return self.propagate(&input_map)
+    }
+
+    pub fn propagate_single_output(&self, inputs: HashMap<String, NDMatrix>) -> NDMatrix {
+        return self.propagate(&inputs).remove(ModelBuilder::SINGLE_IO).unwrap()
+    }
+
     pub fn propagate(&self, inputs: &HashMap<String, NDMatrix>) -> HashMap<String, NDMatrix> {
         let mut data_buffer: HashMap<String, NDMatrix> = HashMap::new();
 
@@ -75,9 +92,7 @@ impl Model {
             .iter()
             .map(|node| (node.0.clone(), node.1.to_json()))
             .collect();
-        let meta = ModelMeta {
-            meta: meta_map,
-        };
+        let meta = ModelMeta { meta: meta_map };
         return ModelSerialized {
             io: io,
             graph: graph,

@@ -3,13 +3,15 @@ use std::fmt::Debug;
 use indexmap::IndexMap;
 
 use crate::{
-    layer::abs::{ModelPropagationNode, LayerRef, LayerPropagateEnum},
+    layer::abs::{LayerPropagateEnum, LayerRef},
     map,
     matrix::meta::node::LayerType,
     model::model::Model,
 };
 
-use super::graph_elements::{BuilderNode, DeadEndStruct, MultipleParentStruct, SingleParentStruct};
+use super::graph_elements::{
+    BuilderNode, DeadEndStruct, ModelPropagationNode, MultipleParentStruct, SingleParentStruct,
+};
 
 /**
  * Builds the neural model with default values
@@ -90,7 +92,7 @@ impl ModelBuilder {
     /**
      * Helper constant for skipping definition if key in a single branched input/output model
      */
-    const SINGLE_IO: &str = "DEF_IO";
+    pub const SINGLE_IO: &str = "DEF_IO";
 
     pub fn from_straight(input: LayerRef, output: LayerRef) -> ModelBuilder {
         return Self::from(
@@ -107,7 +109,10 @@ impl ModelBuilder {
         return Self::from(map!(input => Self::SINGLE_IO.to_owned()), outputs);
     }
 
-    pub fn from(inputs: IndexMap<LayerRef, String>, outputs: IndexMap<LayerRef, String>) -> ModelBuilder {
+    pub fn from(
+        inputs: IndexMap<LayerRef, String>,
+        outputs: IndexMap<LayerRef, String>,
+    ) -> ModelBuilder {
         inputs.iter().for_each(|input_entry| {
             if let LayerType::DeadEnd = input_entry.0.borrow_ref().get_node() {
             } else {

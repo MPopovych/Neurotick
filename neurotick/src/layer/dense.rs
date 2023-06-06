@@ -8,7 +8,7 @@ use crate::{
     }, serial::model_reader::ModelReader, utils::json_wrap::JsonWrap,
 };
 
-use super::abs::{LayerRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput, TypedLayer};
+use super::abs::{LayerRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput};
 
 #[derive(Clone)]
 pub struct Dense {
@@ -31,13 +31,11 @@ impl Dense {
     }
 }
 
-impl TypedLayer for Dense {
+impl Layer for Dense {
     fn type_name(&self) -> &'static str {
         return Self::NAME;
     }
-}
 
-impl Layer for Dense {
     fn get_shape(&self) -> (Shape, Shape) {
         return (
             Shape::Const(self.features),

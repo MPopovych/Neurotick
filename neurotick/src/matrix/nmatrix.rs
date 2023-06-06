@@ -2,11 +2,12 @@ use std::fmt::Debug;
 use std::ops::{Add, BitAnd, Mul};
 
 use base64::Engine;
-use ndarray::{Array2, Ix2, Axis, Ix1};
+use ndarray::{Array2, Ix2, Axis, Ix1, ArrayView};
 use ndarray::iter::{Iter, AxisIter};
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::serial::matrix_serial::{MatrixPack, MatrixSerial};
+use crate::utils::extensions::Distinct;
 
 pub mod test;
 
@@ -133,6 +134,23 @@ impl NDMatrix {
     fn check_same_shape(&self, rhs: &Self) {
         self.check_same_width(rhs);
         self.check_same_height(rhs);
+    }
+}
+
+impl NDMatrix {
+    pub fn concat_horizontal(array: &[&NDMatrix]) -> NDMatrix {
+        let width = array.iter().map(|m| m.width).sum();
+
+        let height_set = array.iter().distinct_vec(|m| m.height);
+        if height_set.len() != 1 {
+            dbg!(&height_set);
+            panic!("Concat not possible due to different heights");
+        }
+        let height = height_set[0];
+
+        let views = array.iter().map(|m| m.values.view()).collect::<Vec<ArrayView<'_, f32, Ix2>>>();
+        let concat = ndarray::concatenate(Axis(1), &views[..]);
+        return NDMatrix { width: width, height: height, values: concat.unwrap() }
     }
 }
 

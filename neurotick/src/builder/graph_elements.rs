@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
+use crate::{layer::abs::{LayerSingleInput, LayerMultiInput}, utils::json_wrap::JsonWrap};
+
 #[derive(Clone, Serialize, Deserialize)]
 pub enum BuilderNode {
     DeadEnd(DeadEndStruct),
@@ -60,4 +62,21 @@ pub struct MultipleParentStruct {
     pub layer_name: String,
     pub type_name: String,
     pub parent_names: Vec<String>,
+}
+
+
+pub enum ModelPropagationNode {
+    DeadEnd(Box<dyn LayerSingleInput>),
+    SingleInput(String, Box<dyn LayerSingleInput>),
+    MultipleInput(Vec<String>, Box<dyn LayerMultiInput>),
+}
+
+impl ModelPropagationNode {
+    pub fn to_json(&self) -> JsonWrap {
+        return match self {
+            ModelPropagationNode::DeadEnd(r) => r.to_json(),
+            ModelPropagationNode::SingleInput(_, r) => r.to_json(),
+            ModelPropagationNode::MultipleInput(_, r) => r.to_json(),
+        };
+    }
 }

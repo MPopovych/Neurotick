@@ -36,30 +36,14 @@ impl LayerRef {
         return self.reference.as_ref();
     }
 }
-/**
- * Helpers for navigating the graph on a pointer basis
- */
-impl PartialEq for LayerRef {
-    fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.reference.as_ref(), other.reference.as_ref())
-    }
-}
-impl Eq for LayerRef {}
 
-impl Hash for LayerRef {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        std::ptr::hash(self.reference.as_ref(), state)
-    }
-}
 
-/**
- * Represents the identity type of the layer, should be unique other-wise lead to a panic
- */
-pub trait TypedLayer {
+pub trait Layer {
+    /**
+     * Represents the identity type of the layer, should be unique other-wise lead to a panic
+     */
     fn type_name(&self) -> &'static str;
-}
-
-pub trait Layer: TypedLayer {
+    
     fn get_shape(&self) -> (Shape, Shape);
     fn get_node(&self) -> LayerType;
     fn create_instance(&self, name: String) -> LayerPropagateEnum;
@@ -92,18 +76,18 @@ pub enum LayerPropagateEnum {
     MultipleInput(Box<dyn LayerMultiInput>),
 }
 
-pub enum ModelPropagationNode {
-    DeadEnd(Box<dyn LayerSingleInput>),
-    SingleInput(String, Box<dyn LayerSingleInput>),
-    MultipleInput(Vec<String>, Box<dyn LayerMultiInput>),
+/**
+ * Helpers for navigating the graph on a pointer basis
+ */
+impl PartialEq for LayerRef {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self.reference.as_ref(), other.reference.as_ref())
+    }
 }
+impl Eq for LayerRef {}
 
-impl ModelPropagationNode {
-    pub fn to_json(&self) -> JsonWrap {
-        return match self {
-            ModelPropagationNode::DeadEnd(r) => r.to_json(),
-            ModelPropagationNode::SingleInput(_, r) => r.to_json(),
-            ModelPropagationNode::MultipleInput(_, r) => r.to_json(),
-        };
+impl Hash for LayerRef {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        std::ptr::hash(self.reference.as_ref(), state)
     }
 }
