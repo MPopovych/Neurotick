@@ -30,6 +30,9 @@ impl Activation for ReLu {
             json: JsonWrap::from(&self).unwrap()
         }
     }
+    fn act_clone(&self) -> Box<dyn Activation> {
+        return Box::new(self.clone())
+    }
 
 }
 

@@ -95,7 +95,7 @@ impl Layer for Dense {
             features: self.features,
             weight: weight_m,
             bias: bias_m,
-            activation: Box::new(NoneAct::default()),
+            activation: self.activation.act_clone(),
         };
         LayerPropagateEnum::SingleInput(Box::new(instance))
     }

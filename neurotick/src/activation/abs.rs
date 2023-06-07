@@ -7,6 +7,7 @@ use crate::{matrix::nmatrix::NDMatrix, utils::{json_wrap::JsonWrap, as_any::AsAn
 pub trait Activation: Debug + AsAny {
     fn apply(&self, array: &NDMatrix) -> NDMatrix;
     fn as_serialized(&self) -> ActivationSerialised;
+    fn act_clone(&self) -> Box<dyn Activation>;
 }
 
 impl<T: 'static + Activation> AsAny for T {
