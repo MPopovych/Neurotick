@@ -4,12 +4,15 @@ use crate::{
         lerelu::LeakyReLu,
         none::NoneAct,
         relu::ReLu,
+        sigmoid::Sigmoid,
         softmax::SoftMax,
+        tanh::Tanh,
     },
     layer::{
         abs::{LayerBase, LayerPropagateEnum},
+        concat::{Concat, ConcatImpl},
         dense::{Dense, DenseImpl},
-        input::{Input, InputImpl}, concat::{Concat, ConcatImpl},
+        input::{Input, InputImpl},
     },
     utils::{injector::GenericInjector, json_wrap::JsonWrap},
 };
@@ -41,13 +44,17 @@ impl GenericInjector<dyn Activation, JsonWrap, ModelReader> {
         let mut injector: GenericInjector<dyn Activation, JsonWrap, ModelReader> =
             GenericInjector::new();
 
-        injector.register(NoneAct::NAME, |_json, _reader| Box::new(NoneAct::default()));
+        injector.register(NoneAct::NAME, |_, _| Box::new(NoneAct::default()));
 
-        injector.register(ReLu::NAME, |json, _reader| ReLu::from_json(&json));
+        injector.register(ReLu::NAME, |json, _| ReLu::from_json(&json));
 
-        injector.register(LeakyReLu::NAME, |json, _reader| LeakyReLu::from_json(&json));
+        injector.register(LeakyReLu::NAME, |json, _| LeakyReLu::from_json(&json));
 
-        injector.register(SoftMax::NAME, |_, _reader| Box::new(SoftMax::default()));
+        injector.register(Sigmoid::NAME, |_, _| Box::new(Sigmoid::default()));
+
+        injector.register(Tanh::NAME, |_, _| Box::new(Tanh::default()));
+
+        injector.register(SoftMax::NAME, |_, _| Box::new(SoftMax::default()));
         return injector;
     }
 }
