@@ -45,16 +45,11 @@ impl GenericInjector<dyn Activation, JsonWrap, ModelReader> {
             GenericInjector::new();
 
         injector.register(NoneAct::NAME, |_, _| Box::new(NoneAct::default()));
-
         injector.register(ReLu::NAME, |json, _| ReLu::from_json(&json));
-
         injector.register(LeakyReLu::NAME, |json, _| LeakyReLu::from_json(&json));
-
-        injector.register(Sigmoid::NAME, |_, _| Box::new(Sigmoid::default()));
-
-        injector.register(Tanh::NAME, |_, _| Box::new(Tanh::default()));
-
         injector.register(SoftMax::NAME, |_, _| Box::new(SoftMax::default()));
+        injector.register(Sigmoid::NAME, |_, _| Box::new(Sigmoid::default()));
+        injector.register(Tanh::NAME, |_, _| Box::new(Tanh::default()));
         return injector;
     }
 }

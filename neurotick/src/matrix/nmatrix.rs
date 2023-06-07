@@ -7,6 +7,7 @@ use ndarray::iter::{Iter, AxisIter};
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::serial::matrix_serial::{MatrixPack, MatrixSerial};
+use crate::suppliers::suppliers::Supplier;
 use crate::utils::extensions::Distinct;
 
 pub mod test;
@@ -26,6 +27,11 @@ impl NDMatrix {
             height,
             values: data,
         };
+    }
+
+    pub fn from_supply(width: usize, height: usize, supply: impl Supplier) -> NDMatrix {
+        let mut own_mut = supply;
+        return own_mut.supply_matrix(width, height);
     }
 
     pub fn with(width: usize, height: usize, with: Array2<f32>) -> NDMatrix {

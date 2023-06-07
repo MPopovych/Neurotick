@@ -20,6 +20,11 @@ impl<T, B: Eq + Hash, U: Iterator<Item = T>> Distinct<T, B> for U {
     }
 }
 
+pub fn eq_vecs<T: PartialEq>(a: &Vec<T>, b: &Vec<T>) -> bool {
+    let matching = a.iter().zip(b.iter()).filter(|&(a, b)| a == b).count();
+    matching == a.len() && matching == b.len()
+}
+
 #[cfg(test)]
 pub mod test {
     use super::Distinct;
