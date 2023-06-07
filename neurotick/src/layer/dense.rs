@@ -1,19 +1,22 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    activation::{abs::{Activation, ActivationSerialised}, relu::ReLu},
+    activation::{abs::{Activation, ActivationSerialised}, none::NoneAct},
     matrix::{
         meta::{node::LayerType, shape::Shape},
         nmatrix::NDMatrix,
-    }, serial::model_reader::ModelReader, utils::json_wrap::JsonWrap,
+    }, serial::model_reader::ModelReader, utils::json_wrap::JsonWrap, suppliers::suppliers::{Suppliers, GlorothNormalSupplier, Supplier, ZeroSupplier},
 };
 
 use super::abs::{LayerRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput};
 
-#[derive(Clone)]
+
 pub struct Dense {
     features: usize,
     parent: LayerRef,
+    activation: Box<dyn Activation>,
+    weight_init: Suppliers,
+    bias_init: Suppliers,
 }
 
 impl Dense {
@@ -23,11 +26,40 @@ impl Dense {
     where
         F: Fn() -> &'a LayerRef,
     {
-        let dense = Dense {
+        let dense = Self::builder(features, uplink);
+        return LayerRef::pin(dense);
+    }
+
+    pub fn builder<'a, F>(features: usize, uplink: F) -> Dense
+    where
+        F: Fn() -> &'a LayerRef,
+    {
+        return Dense {
             features,
             parent: uplink().clone(),
+            activation: Box::new(NoneAct::default()),
+            weight_init: GlorothNormalSupplier::new().into_enum(),
+            bias_init: ZeroSupplier::new().into_enum(),
         };
-        return LayerRef::pin(dense);
+    }
+
+    pub fn with_activation(mut self, activation: impl Activation) -> Dense {
+        self.activation = Box::new(activation);
+        return self;
+    }
+
+    pub fn with_weight_init(mut self, supplier: impl Supplier) -> Dense {
+        self.weight_init = supplier.into_enum();
+        return self;
+    }
+
+    pub fn with_bias_init(mut self, supplier: impl Supplier) -> Dense {
+        self.bias_init = supplier.into_enum();
+        return self;
+    }
+
+    pub fn build(self) -> LayerRef {
+        return LayerRef::pin(self);
     }
 }
 
@@ -55,12 +87,15 @@ impl Layer for Dense {
                 id
             );
         }
+
+        let weight_m = self.weight_init.supply_matrix(self.features, parent_feats);
+        let bias_m = self.bias_init.supply_matrix(self.features, 1);
         let instance = DenseImpl {
             id: id,
             features: self.features,
-            weight: NDMatrix::constant(self.features, parent_feats, 1.0 / parent_feats as f32),
-            bias: NDMatrix::constant(self.features, 1, 0.0),
-            activation: Box::new(ReLu::default()),
+            weight: weight_m,
+            bias: bias_m,
+            activation: Box::new(NoneAct::default()),
         };
         LayerPropagateEnum::SingleInput(Box::new(instance))
     }

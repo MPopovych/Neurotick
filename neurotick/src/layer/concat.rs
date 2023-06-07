@@ -13,7 +13,6 @@ use super::abs::{
     Layer, LayerBase, LayerMultiInput, LayerPropagateEnum, LayerRef,
 };
 
-#[derive(Clone)]
 pub struct Concat {
     parents: Vec<LayerRef>,
     features: Shape,

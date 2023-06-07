@@ -9,7 +9,6 @@ use super::abs::{
     LayerRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput,
 };
 
-#[derive(Clone)]
 pub struct Input {
     features: Shape,
     size: Shape,

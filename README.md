@@ -74,3 +74,19 @@ Example of calling a model
 ``` rust
 let output_data: HashMap<String, NDMatrix> = model.propagate(&input_data);
 ```
+
+Example of configuring a dense layer:
+
+``` rust
+let input_1 = Input::new(Shape::Const(10), Shape::Repeat);
+let d1 = Dense::new(20, || &input_1);
+let d2 = Dense::builder(3, || &d1)
+    .with_activation(ReLu::default())
+    .with_bias_init(ZeroSupplier::new())
+    .with_weight_init(GlorothNormalSupplier::new())
+    .build();
+
+let mb = ModelBuilder::from_straight(input_1, d2);
+
+let _model = mb.build();
+```

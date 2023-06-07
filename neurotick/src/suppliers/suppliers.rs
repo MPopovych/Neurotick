@@ -1,12 +1,14 @@
-use crate::{matrix::nmatrix::NDMatrix};
+use std::cell::RefCell;
+use crate::matrix::nmatrix::NDMatrix;
 use rand::{rngs::ThreadRng, thread_rng, Rng};
 use rand_distr::StandardNormal;
 
 pub enum Suppliers {
-    RandomNormal(RandomNormalSupplier),
-    RandomUniform(RandomUniformSupplier),
-    GlorothNormal(GlorothNormalSupplier),
-    GlorothUniform(GlorothUniformSupplier),
+    Zero(RefCell<ZeroSupplier>),
+    RandomNormal(RefCell<RandomNormalSupplier>),
+    RandomUniform(RefCell<RandomUniformSupplier>),
+    GlorothNormal(RefCell<GlorothNormalSupplier>),
+    GlorothUniform(RefCell<GlorothUniformSupplier>),
 }
 
 pub trait Supplier {
@@ -14,6 +16,30 @@ pub trait Supplier {
     fn supply_matrix(&mut self, width: usize, height: usize) -> NDMatrix;
     fn into_enum(self) -> Suppliers;
 }
+
+impl Suppliers {
+    pub fn supply_single(&self, in_f: usize, out_f: usize) -> f32 {
+        match self {
+            Suppliers::Zero(rc) => rc.borrow_mut().supply_single(in_f, out_f),
+            Suppliers::RandomNormal(rc) => rc.borrow_mut().supply_single(in_f, out_f),
+            Suppliers::RandomUniform(rc) => rc.borrow_mut().supply_single(in_f, out_f),
+            Suppliers::GlorothNormal(rc) => rc.borrow_mut().supply_single(in_f, out_f),
+            Suppliers::GlorothUniform(rc) => rc.borrow_mut().supply_single(in_f, out_f),
+        }
+    }
+
+    pub fn supply_matrix(&self, width: usize, height: usize) -> NDMatrix {
+        match self {
+            Suppliers::Zero(rc) => rc.borrow_mut().supply_matrix(width, height),
+            Suppliers::RandomNormal(rc) => rc.borrow_mut().supply_matrix(width, height),
+            Suppliers::RandomUniform(rc) => rc.borrow_mut().supply_matrix(width, height),
+            Suppliers::GlorothNormal(rc) => rc.borrow_mut().supply_matrix(width, height),
+            Suppliers::GlorothUniform(rc) => rc.borrow_mut().supply_matrix(width, height),
+        }
+    }
+}
+
+pub struct ZeroSupplier;
 
 pub struct RandomNormalSupplier {
     pub mean: f32,
@@ -35,9 +61,30 @@ pub struct GlorothUniformSupplier {
     rng: ThreadRng,
 }
 
+impl ZeroSupplier {
+    #[allow(dead_code)]
+    pub fn new() -> ZeroSupplier {
+        return ZeroSupplier {};
+    }
+}
+
+impl Supplier for ZeroSupplier {
+    fn supply_single(&mut self, _in_f: usize, _out_f: usize) -> f32 {
+        return 0.0;
+    }
+
+    fn supply_matrix(&mut self, width: usize, height: usize) -> NDMatrix {
+        return NDMatrix::constant(width, height, 0.0);
+    }
+
+    fn into_enum(self) -> Suppliers {
+        return Suppliers::Zero(RefCell::new(self));
+    }
+}
+
 impl RandomNormalSupplier {
     #[allow(dead_code)]
-    fn new(mean: f32, std_dev: f32) -> RandomNormalSupplier {
+    pub fn new(mean: f32, std_dev: f32) -> RandomNormalSupplier {
         return RandomNormalSupplier {
             mean,
             std_dev,
@@ -59,13 +106,13 @@ impl Supplier for RandomNormalSupplier {
     }
 
     fn into_enum(self) -> Suppliers {
-        return Suppliers::RandomNormal(self);
+        return Suppliers::RandomNormal(RefCell::new(self));
     }
 }
 
 impl RandomUniformSupplier {
     #[allow(dead_code)]
-    fn new(max: f32, min: f32) -> RandomUniformSupplier {
+    pub fn new(max: f32, min: f32) -> RandomUniformSupplier {
         return RandomUniformSupplier {
             max,
             min,
@@ -89,13 +136,13 @@ impl Supplier for RandomUniformSupplier {
     }
 
     fn into_enum(self) -> Suppliers {
-        return Suppliers::RandomUniform(self);
+        return Suppliers::RandomUniform(RefCell::new(self));
     }
 }
 
 impl GlorothUniformSupplier {
     #[allow(dead_code)]
-    fn new() -> GlorothUniformSupplier {
+    pub fn new() -> GlorothUniformSupplier {
         return GlorothUniformSupplier { rng: thread_rng() };
     }
 }
@@ -115,16 +162,14 @@ impl Supplier for GlorothUniformSupplier {
     }
 
     fn into_enum(self) -> Suppliers {
-        return Suppliers::GlorothUniform(self);
+        return Suppliers::GlorothUniform(RefCell::new(self));
     }
 }
 
 impl GlorothNormalSupplier {
     #[allow(dead_code)]
-    fn new() -> GlorothNormalSupplier {
-        return GlorothNormalSupplier {
-            rng: thread_rng(),
-        };
+    pub fn new() -> GlorothNormalSupplier {
+        return GlorothNormalSupplier { rng: thread_rng() };
     }
 }
 
@@ -143,6 +188,6 @@ impl Supplier for GlorothNormalSupplier {
     }
 
     fn into_enum(self) -> Suppliers {
-        return Suppliers::GlorothNormal(self);
+        return Suppliers::GlorothNormal(RefCell::new(self));
     }
 }

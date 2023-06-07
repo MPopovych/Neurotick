@@ -3,10 +3,14 @@ pub mod test {
     use std::collections::HashMap;
 
     use neurotick::{
+        activation::relu::ReLu,
         builder::builder::ModelBuilder,
         layer::{dense::Dense, input::Input},
         map,
-        matrix::{meta::shape::Shape, nmatrix::NDMatrix}, serial::{model_serial::ModelSerialized, model_reader::ModelReader}, model::model::Model,
+        matrix::{meta::shape::Shape, nmatrix::NDMatrix},
+        model::model::Model,
+        serial::{model_reader::ModelReader, model_serial::ModelSerialized},
+        suppliers::suppliers::{GlorothNormalSupplier, ZeroSupplier},
     };
 
     #[test]
@@ -59,11 +63,11 @@ pub mod test {
         };
 
         let mb = ModelBuilder::from(inputs, outputs);
-        
+
         let model = mb.build();
         return model;
     }
-    
+
     #[test]
     fn test_small_mb() {
         let model = build_small_model();
@@ -81,7 +85,7 @@ pub mod test {
 
         let model_pre_serialize = build_small_model();
         let serialized: ModelSerialized = model_pre_serialize.to_serialized_model();
-        
+
         let input_data: HashMap<String, NDMatrix> = map! {
             "input".to_owned() => NDMatrix::constant(SMALL_INPUT_SHAPE, 2, 1.0),
         };
@@ -91,6 +95,24 @@ pub mod test {
         let model_post_serialize = serialized.build_model(&model_reader);
         let output_post_serialize = model_post_serialize.propagate(&input_data);
         dbg!(&output_post_serialize);
-        assert_eq!(output_pre_serialize.get("output").unwrap().values, output_post_serialize.get("output").unwrap().values)
+        assert_eq!(
+            output_pre_serialize.get("output").unwrap().values,
+            output_post_serialize.get("output").unwrap().values
+        )
+    }
+
+    #[test]
+    fn test_complex_dense() {
+        let input_1 = Input::new(Shape::Const(SMALL_INPUT_SHAPE), Shape::Repeat);
+        let d1 = Dense::new(20, || &input_1);
+        let d2 = Dense::builder(SMALL_OUTPUT_SHAPE, || &d1)
+            .with_activation(ReLu::default())
+            .with_bias_init(ZeroSupplier::new())
+            .with_weight_init(GlorothNormalSupplier::new())
+            .build();
+
+        let mb = ModelBuilder::from_straight(input_1, d2);
+
+        let _model = mb.build();
     }
 }
