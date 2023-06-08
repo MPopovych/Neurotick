@@ -6,12 +6,10 @@ use crate::{
         nmatrix::NDMatrix,
     },
     serial::model_reader::ModelReader,
-    utils::{json_wrap::JsonWrap, extensions::Distinct},
+    utils::{extensions::Distinct, json_wrap::JsonWrap},
 };
 
-use super::abs::{
-    Layer, LayerBase, LayerMultiInput, LayerPropagateEnum, LayerRef,
-};
+use super::abs::{Layer, LayerBase, LayerMultiInput, LayerPropagateEnum, LayerRef};
 
 pub struct Concat {
     parents: Vec<LayerRef>,

@@ -3,10 +3,14 @@ use std::collections::HashMap;
 use indexmap::IndexMap;
 
 use crate::{
-    builder::{graph_elements::{BuilderNode, ModelPropagationNode}, builder::ModelBuilder},
+    builder::{
+        builder::ModelBuilder,
+        graph_elements::{BuilderNode, ModelPropagationNode},
+    },
+    map,
     matrix::nmatrix::NDMatrix,
     serial::model_serial::{ModelGraph, ModelIO, ModelMeta, ModelSerialized},
-    utils::json_wrap::JsonWrap, map,
+    utils::json_wrap::JsonWrap,
 };
 
 pub struct Model {
@@ -17,20 +21,25 @@ pub struct Model {
 }
 
 impl Model {
-
     pub fn propagate_single(&self, input: NDMatrix) -> NDMatrix {
-        return self.propagate_single_input(input).remove(ModelBuilder::SINGLE_IO).unwrap()
+        return self
+            .propagate_single_input(input)
+            .remove(ModelBuilder::SINGLE_IO)
+            .unwrap();
     }
 
     pub fn propagate_single_input(&self, input: NDMatrix) -> HashMap<String, NDMatrix> {
         let input_map: HashMap<String, NDMatrix> = map! {
             ModelBuilder::SINGLE_IO.to_string() => input
         };
-        return self.propagate(&input_map)
+        return self.propagate(&input_map);
     }
 
     pub fn propagate_single_output(&self, inputs: HashMap<String, NDMatrix>) -> NDMatrix {
-        return self.propagate(&inputs).remove(ModelBuilder::SINGLE_IO).unwrap()
+        return self
+            .propagate(&inputs)
+            .remove(ModelBuilder::SINGLE_IO)
+            .unwrap();
     }
 
     pub fn propagate(&self, inputs: &HashMap<String, NDMatrix>) -> HashMap<String, NDMatrix> {

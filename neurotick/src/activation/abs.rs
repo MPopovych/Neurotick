@@ -1,8 +1,11 @@
-use std::{fmt::Debug, any::Any};
+use std::{any::Any, fmt::Debug};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{matrix::nmatrix::NDMatrix, utils::{json_wrap::JsonWrap, as_any::AsAny}};
+use crate::{
+    matrix::nmatrix::NDMatrix,
+    utils::{as_any::AsAny, json_wrap::JsonWrap},
+};
 
 pub trait Activation: Debug + AsAny {
     fn apply(&self, array: &NDMatrix) -> NDMatrix;
@@ -24,7 +27,6 @@ pub trait ActivationVirtual {
     fn from_json(json: &JsonWrap) -> Box<dyn Activation>;
     fn type_name() -> &'static str;
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ActivationSerialised {

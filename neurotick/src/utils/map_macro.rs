@@ -1,7 +1,7 @@
 #![allow(unused_macros)]
 #![allow(unused_imports)]
 
-use std::{vec, slice::Iter, collections::HashMap};
+use std::{collections::HashMap, slice::Iter, vec};
 
 #[macro_export]
 macro_rules! map {

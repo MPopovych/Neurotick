@@ -31,7 +31,7 @@ pub mod test {
             abs::{Activation, ActivationSerialised},
             relu::ReLu,
         },
-        serial::model_reader::{ModelReader},
+        serial::model_reader::ModelReader,
     };
 
     #[test]

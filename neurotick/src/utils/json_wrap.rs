@@ -22,6 +22,6 @@ impl JsonWrap {
     }
 
     pub fn to_string(&self) -> Result<String, Error> {
-        return serde_json::to_string(&self.value)
+        return serde_json::to_string(&self.value);
     }
 }

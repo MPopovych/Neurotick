@@ -28,14 +28,13 @@ impl Activation for LeakyReLu {
     fn as_serialized(&self) -> ActivationSerialised {
         ActivationSerialised {
             name: Self::NAME.to_string(),
-            json: JsonWrap::from(&self).unwrap()
+            json: JsonWrap::from(&self).unwrap(),
         }
     }
 
     fn act_clone(&self) -> Box<dyn Activation> {
-        return Box::new(self.clone())
+        return Box::new(self.clone());
     }
-    
 }
 
 impl ActivationVirtual for LeakyReLu {
@@ -44,6 +43,6 @@ impl ActivationVirtual for LeakyReLu {
     }
 
     fn type_name() -> &'static str {
-        return Self::NAME
+        return Self::NAME;
     }
 }

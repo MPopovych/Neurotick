@@ -2,8 +2,8 @@ use std::fmt::Debug;
 use std::ops::{Add, BitAnd, Mul};
 
 use base64::Engine;
-use ndarray::{Array2, Ix2, Axis, Ix1, ArrayView};
-use ndarray::iter::{Iter, AxisIter};
+use ndarray::iter::{AxisIter, Iter};
+use ndarray::{Array2, ArrayView, Axis, Ix1, Ix2};
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::serial::matrix_serial::{MatrixPack, MatrixSerial};
@@ -179,9 +179,16 @@ impl NDMatrix {
         }
         let height = height_set[0];
 
-        let views = array.iter().map(|m| m.values.view()).collect::<Vec<ArrayView<'_, f32, Ix2>>>();
+        let views = array
+            .iter()
+            .map(|m| m.values.view())
+            .collect::<Vec<ArrayView<'_, f32, Ix2>>>();
         let concat = ndarray::concatenate(Axis(1), &views[..]);
-        return NDMatrix { width: width, height: height, values: concat.unwrap() }
+        return NDMatrix {
+            width: width,
+            height: height,
+            values: concat.unwrap(),
+        };
     }
 }
 
@@ -243,7 +250,9 @@ impl MatrixSerial<NDMatrix> for NDMatrix {
      * This should panic if the byte packing is wrong
      */
     fn unpack(pack: &MatrixPack) -> NDMatrix {
-        let decoded = base64::engine::general_purpose::STANDARD_NO_PAD.decode(&pack.data).unwrap();
+        let decoded = base64::engine::general_purpose::STANDARD_NO_PAD
+            .decode(&pack.data)
+            .unwrap();
         let float_array = decoded
             .chunks_exact(4)
             .into_iter()

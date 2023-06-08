@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
-use crate::{layer::abs::{LayerSingleInput, LayerMultiInput}, utils::json_wrap::JsonWrap};
+use crate::{
+    layer::abs::{LayerMultiInput, LayerSingleInput},
+    utils::json_wrap::JsonWrap,
+};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum BuilderNode {
@@ -63,7 +66,6 @@ pub struct MultipleParentStruct {
     pub type_name: String,
     pub parent_names: Vec<String>,
 }
-
 
 pub enum ModelPropagationNode {
     DeadEnd(Box<dyn LayerSingleInput>),

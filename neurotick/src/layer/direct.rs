@@ -1,15 +1,20 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    activation::{abs::{Activation, ActivationSerialised}, none::NoneAct},
+    activation::{
+        abs::{Activation, ActivationSerialised},
+        none::NoneAct,
+    },
     matrix::{
         meta::{node::LayerType, shape::Shape},
         nmatrix::NDMatrix,
-    }, serial::model_reader::ModelReader, utils::json_wrap::JsonWrap, suppliers::suppliers::{Suppliers, GlorothNormalSupplier, Supplier, ZeroSupplier},
+    },
+    serial::model_reader::ModelReader,
+    suppliers::suppliers::{GlorothNormalSupplier, Supplier, Suppliers, ZeroSupplier},
+    utils::json_wrap::JsonWrap,
 };
 
-use super::abs::{LayerRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput};
-
+use super::abs::{Layer, LayerBase, LayerPropagateEnum, LayerRef, LayerSingleInput};
 
 pub struct Direct {
     parent: LayerRef,
@@ -115,12 +120,14 @@ impl LayerBase for DirectImpl {
             id: deserialized.id,
             weight: deserialized.weight,
             bias: deserialized.bias,
-            activation: model_reader.get_activation_di().create(&activation_ser.name, &activation_ser.json, model_reader)
+            activation: model_reader.get_activation_di().create(
+                &activation_ser.name,
+                &activation_ser.json,
+                model_reader,
+            ),
         };
 
-        return LayerPropagateEnum::SingleInput(
-            Box::new(impl_ref)
-        )
+        return LayerPropagateEnum::SingleInput(Box::new(impl_ref));
     }
 
     fn to_json(&self) -> JsonWrap {
@@ -128,9 +135,9 @@ impl LayerBase for DirectImpl {
             id: self.id.clone(),
             weight: self.weight.clone(),
             bias: self.bias.clone(),
-            activation: self.activation.as_serialized()
+            activation: self.activation.as_serialized(),
         };
-        return JsonWrap::from(serial).unwrap()
+        return JsonWrap::from(serial).unwrap();
     }
 }
 
@@ -151,5 +158,5 @@ struct DirectSerialization {
     id: String,
     weight: NDMatrix,
     bias: NDMatrix,
-    activation: ActivationSerialised
+    activation: ActivationSerialised,
 }

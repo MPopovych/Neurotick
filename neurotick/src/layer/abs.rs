@@ -37,13 +37,12 @@ impl LayerRef {
     }
 }
 
-
 pub trait Layer {
     /**
      * Represents the identity type of the layer, should be unique other-wise lead to a panic
      */
     fn type_name(&self) -> &'static str;
-    
+
     fn get_shape(&self) -> (Shape, Shape);
     fn get_node(&self) -> LayerType;
     fn create_instance(&self, name: String) -> LayerPropagateEnum;

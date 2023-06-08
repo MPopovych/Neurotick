@@ -1,7 +1,7 @@
-use std::cell::RefCell;
 use crate::matrix::nmatrix::NDMatrix;
 use rand::{rngs::ThreadRng, thread_rng, Rng};
 use rand_distr::StandardNormal;
+use std::cell::RefCell;
 
 pub enum Suppliers {
     Zero(RefCell<ZeroSupplier>),

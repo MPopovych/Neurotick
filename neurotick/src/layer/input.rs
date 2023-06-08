@@ -1,13 +1,15 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use crate::{matrix::{
-    meta::{node::LayerType, shape::Shape},
-    nmatrix::NDMatrix,
-}, serial::model_reader::ModelReader, utils::json_wrap::JsonWrap};
-
-use super::abs::{
-    LayerRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput,
+use crate::{
+    matrix::{
+        meta::{node::LayerType, shape::Shape},
+        nmatrix::NDMatrix,
+    },
+    serial::model_reader::ModelReader,
+    utils::json_wrap::JsonWrap,
 };
+
+use super::abs::{Layer, LayerBase, LayerPropagateEnum, LayerRef, LayerSingleInput};
 
 pub struct Input {
     features: Shape,
@@ -60,11 +62,9 @@ impl LayerBase for InputImpl {
         let impl_ref = InputImpl {
             id: deserialized.id,
             features: deserialized.features,
-            size: deserialized.size
+            size: deserialized.size,
         };
-        return LayerPropagateEnum::SingleInput(
-            Box::new(impl_ref)
-        );
+        return LayerPropagateEnum::SingleInput(Box::new(impl_ref));
     }
 
     fn to_json(&self) -> JsonWrap {
@@ -73,7 +73,7 @@ impl LayerBase for InputImpl {
             features: self.features.clone(),
             size: self.size.clone(),
         };
-        return JsonWrap::from(serial).unwrap()
+        return JsonWrap::from(serial).unwrap();
     }
 }
 

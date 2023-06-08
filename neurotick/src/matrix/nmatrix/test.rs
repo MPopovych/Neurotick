@@ -55,9 +55,7 @@ mod tests {
         let a = NDMatrix::constant(32, 10, 1.);
         let b = NDMatrix::constant(2, 32, 1.0 / 32 as f32); // 2 features from 32 features
         let d = &a * &b;
-        d.iter_all().for_each(|f| {
-            assert!(f.eq(&1.0))
-        });
+        d.iter_all().for_each(|f| assert!(f.eq(&1.0)));
     }
 
     #[test]
@@ -65,9 +63,6 @@ mod tests {
         let a = NDMatrix::constant(32, 2, 1.);
         let b = NDMatrix::constant(32, 1, 1.);
         let d = &a + &b;
-        d.iter_all().for_each(|f| {
-            assert!(f.eq(&2.0))
-        });
+        d.iter_all().for_each(|f| assert!(f.eq(&2.0)));
     }
-
 }

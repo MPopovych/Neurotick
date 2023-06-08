@@ -61,10 +61,13 @@ pub mod raw_value_map {
         D: Deserializer<'de>,
     {
         let map: Map<String, Value> = Deserialize::deserialize(deserializer)?;
-        let result = map.into_iter().map(|e| {
-            let enclosed_local = e.1.as_object().unwrap();
-            (e.0.clone(), serde_json::to_string(&enclosed_local).unwrap())
-        }).collect();
+        let result = map
+            .into_iter()
+            .map(|e| {
+                let enclosed_local = e.1.as_object().unwrap();
+                (e.0.clone(), serde_json::to_string(&enclosed_local).unwrap())
+            })
+            .collect();
         Ok(result)
     }
 }
