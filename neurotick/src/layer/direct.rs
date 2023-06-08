@@ -11,31 +11,29 @@ use crate::{
 use super::abs::{LayerRef, Layer, LayerBase, LayerPropagateEnum, LayerSingleInput};
 
 
-pub struct Dense {
-    features: usize,
+pub struct Direct {
     parent: LayerRef,
     activation: Box<dyn Activation>,
     weight_init: Suppliers,
     bias_init: Suppliers,
 }
 
-impl Dense {
-    pub const NAME: &str = "Dense";
+impl Direct {
+    pub const NAME: &str = "Direct";
 
-    pub fn new<'a, F>(features: usize, uplink: F) -> LayerRef
+    pub fn new<'a, F>(uplink: F) -> LayerRef
     where
         F: Fn() -> &'a LayerRef,
     {
-        let dense = Self::builder(features, uplink);
-        return LayerRef::pin(dense);
+        let direct = Self::builder(uplink);
+        return LayerRef::pin(direct);
     }
 
-    pub fn builder<'a, F>(features: usize, uplink: F) -> Dense
+    pub fn builder<'a, F>(uplink: F) -> Direct
     where
         F: Fn() -> &'a LayerRef,
     {
-        return Dense {
-            features,
+        return Direct {
             parent: uplink().clone(),
             activation: Box::new(NoneAct::default()),
             weight_init: GlorothNormalSupplier::new().into_enum(),
@@ -43,17 +41,17 @@ impl Dense {
         };
     }
 
-    pub fn with_activation(mut self, activation: impl Activation) -> Dense {
+    pub fn with_activation(mut self, activation: impl Activation) -> Direct {
         self.activation = Box::new(activation);
         return self;
     }
 
-    pub fn with_weight_init(mut self, supplier: impl Supplier) -> Dense {
+    pub fn with_weight_init(mut self, supplier: impl Supplier) -> Direct {
         self.weight_init = supplier.into_enum();
         return self;
     }
 
-    pub fn with_bias_init(mut self, supplier: impl Supplier) -> Dense {
+    pub fn with_bias_init(mut self, supplier: impl Supplier) -> Direct {
         self.bias_init = supplier.into_enum();
         return self;
     }
@@ -63,14 +61,14 @@ impl Dense {
     }
 }
 
-impl Layer for Dense {
+impl Layer for Direct {
     fn type_name(&self) -> &'static str {
         return Self::NAME;
     }
 
     fn get_shape(&self) -> (Shape, Shape) {
         return (
-            Shape::Const(self.features),
+            self.parent.get_shape().0.clone(),
             self.parent.get_shape().1.clone(),
         );
     }
@@ -88,11 +86,10 @@ impl Layer for Dense {
             );
         }
 
-        let weight_m = self.weight_init.supply_matrix(self.features, parent_feats);
-        let bias_m = self.bias_init.supply_matrix(self.features, 1);
-        let instance = DenseImpl {
+        let weight_m = self.weight_init.supply_matrix(parent_feats, 1);
+        let bias_m = self.bias_init.supply_matrix(parent_feats, 1);
+        let instance = DirectImpl {
             id: id,
-            features: self.features,
             weight: weight_m,
             bias: bias_m,
             activation: self.activation.act_clone(),
@@ -101,23 +98,21 @@ impl Layer for Dense {
     }
 }
 
-pub struct DenseImpl {
+pub struct DirectImpl {
     id: String,
-    features: usize,
     weight: NDMatrix,
     bias: NDMatrix,
     activation: Box<dyn Activation>,
 }
 
-impl LayerBase for DenseImpl {
+impl LayerBase for DirectImpl {
     fn init(&mut self) {}
 
     fn create_from_ser(json: &JsonWrap, model_reader: &ModelReader) -> LayerPropagateEnum {
-        let deserialized: DenseSerialization = json.to().unwrap();
+        let deserialized: DirectSerialization = json.to().unwrap();
         let activation_ser = &deserialized.activation;
-        let impl_ref = DenseImpl {
+        let impl_ref = DirectImpl {
             id: deserialized.id,
-            features: deserialized.features,
             weight: deserialized.weight,
             bias: deserialized.bias,
             activation: model_reader.get_activation_di().create(&activation_ser.name, &activation_ser.json, model_reader)
@@ -129,9 +124,8 @@ impl LayerBase for DenseImpl {
     }
 
     fn to_json(&self) -> JsonWrap {
-        let serial = DenseSerialization {
+        let serial = DirectSerialization {
             id: self.id.clone(),
-            features: self.features.clone(),
             weight: self.weight.clone(),
             bias: self.bias.clone(),
             activation: self.activation.as_serialized()
@@ -140,10 +134,10 @@ impl LayerBase for DenseImpl {
     }
 }
 
-impl LayerSingleInput for DenseImpl {
+impl LayerSingleInput for DirectImpl {
     fn propagate(&self, input: &NDMatrix) -> NDMatrix {
-        let weighted_mul = NDMatrix::mat_mul(input, &self.weight);
-        let with_bias = NDMatrix::add(&weighted_mul, &self.bias);
+        let weight_hadamard = NDMatrix::hadamard_row_wise(input, &self.weight);
+        let with_bias = NDMatrix::add(&weight_hadamard, &self.bias);
         return self.activation.apply(&with_bias);
     }
 }
@@ -153,9 +147,8 @@ impl LayerSingleInput for DenseImpl {
  */
 
 #[derive(Serialize, Deserialize, Debug)]
-struct DenseSerialization {
+struct DirectSerialization {
     id: String,
-    features: usize,
     weight: NDMatrix,
     bias: NDMatrix,
     activation: ActivationSerialised

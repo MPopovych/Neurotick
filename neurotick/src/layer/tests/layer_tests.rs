@@ -4,7 +4,7 @@ mod test {
 
     use crate::{
         builder::builder::ModelBuilder,
-        layer::{dense::Dense, input::Input, concat::Concat, abs::LayerRef},
+        layer::{dense::Dense, input::Input, concat::Concat, abs::LayerRef, direct::Direct},
         matrix::{meta::shape::Shape, nmatrix::NDMatrix}, map,
     };
 
@@ -22,7 +22,20 @@ mod test {
     }
 
     #[test]
-    fn cocat_layer_test() {
+    fn direct_layer_test() {
+        let input = Input::new(Shape::Const(3), Shape::Const(2));
+        let direct = Direct::new(|| &input);
+        let mb = ModelBuilder::from_straight(input, direct);
+        let model = mb.build();
+
+        let input_data = NDMatrix::constant(3, 2, 1.0);
+        let output_data = model.propagate_single(input_data);
+        assert!(output_data.width == 3 && output_data.height == 2);
+        dbg!(&output_data);
+    }
+
+    #[test]
+    fn concat_layer_test() {
         let input_1 = Input::new(Shape::Const(3), Shape::Const(2));
         let input_2 = Input::new(Shape::Const(5), Shape::Const(2));
 

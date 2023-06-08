@@ -65,7 +65,7 @@ impl NDMatrix {
         };
     }
 
-    pub fn mul(a: &NDMatrix, b: &NDMatrix) -> NDMatrix {
+    pub fn mat_mul(a: &NDMatrix, b: &NDMatrix) -> NDMatrix {
         let r = (&a.values).dot(&b.values);
         return NDMatrix {
             width: b.width,
@@ -76,6 +76,18 @@ impl NDMatrix {
 
     pub fn hadamard(a: &NDMatrix, b: &NDMatrix) -> NDMatrix {
         a.check_same_shape(&b);
+        let r = (&a.values).mul(&b.values);
+        return NDMatrix {
+            width: b.width,
+            height: a.height,
+            values: r,
+        };
+    }
+
+    pub fn hadamard_row_wise(a: &NDMatrix, b: &NDMatrix) -> NDMatrix {
+        a.check_same_width(&b);
+        b.check_height_eq(1);
+
         let r = (&a.values).mul(&b.values);
         return NDMatrix {
             width: b.width,
@@ -131,9 +143,22 @@ impl NDMatrix {
         }
     }
 
+    #[allow(dead_code)]
+    fn check_width_eq(&self, eq: usize) {
+        if self.width != eq {
+            panic!("Different width: {} {}", self.width, eq)
+        }
+    }
+
     fn check_same_height(&self, rhs: &Self) {
         if self.height != rhs.height {
             panic!("Different height: {} {}", self.height, rhs.height)
+        }
+    }
+
+    fn check_height_eq(&self, eq: usize) {
+        if self.height != eq {
+            panic!("Different height: {} {}", self.height, eq)
         }
     }
 
@@ -164,7 +189,7 @@ impl<'a, 'b> Mul<&'b NDMatrix> for &'a NDMatrix {
     type Output = NDMatrix;
 
     fn mul(self, rhs: &'b NDMatrix) -> Self::Output {
-        NDMatrix::mul(self, rhs)
+        NDMatrix::mat_mul(self, rhs)
     }
 }
 
