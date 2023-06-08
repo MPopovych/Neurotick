@@ -54,14 +54,6 @@ impl Layer for Flatten {
     }
 
     fn create_instance(&self, id: String) -> LayerPropagateEnum {
-        let parent_feats = self.parent.get_shape().0.unwrap_to_conts();
-        if parent_feats <= 0 {
-            panic!(
-                "Zero or negative features in parent is not allowed, by: {}",
-                id
-            );
-        }
-
         let instance = FlattenImpl { id: id };
         LayerPropagateEnum::SingleInput(Box::new(instance))
     }

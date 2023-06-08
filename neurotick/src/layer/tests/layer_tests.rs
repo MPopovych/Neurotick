@@ -66,7 +66,7 @@ mod test {
     }
 
     #[test]
-    fn flatten_const_layer_test() {
+    fn flatten_full_const_layer_test() {
         let input = Input::new(Shape::Const(3), Shape::Const(2));
         let flatten = Flatten::new(|| &input);
         let mb = ModelBuilder::from_straight(input, flatten);
@@ -79,8 +79,27 @@ mod test {
     }
 
     #[test]
-    fn flatten_variable_layer_test() {
+    fn flatten_const_variable_layer_test() {
         let input = Input::new(Shape::Const(3), Shape::Variable);
+        let flatten = Flatten::new(|| &input);
+
+        assert!(
+            matches!(flatten.get_shape().0, Shape::Variable)
+                && flatten.get_shape().1.unwrap_to_conts() == 1
+        );
+
+        let mb = ModelBuilder::from_straight(input, flatten);
+        let model = mb.build();
+
+        let input_data = NDMatrix::constant(3, 3, 1.0);
+        let output_data = model.propagate_single(input_data);
+        assert!(output_data.width == 9 && output_data.height == 1);
+        dbg!(&output_data);
+    }
+
+    #[test]
+    fn flatten_full_variable_layer_test() {
+        let input = Input::new(Shape::Variable, Shape::Variable);
         let flatten = Flatten::new(|| &input);
 
         assert!(
